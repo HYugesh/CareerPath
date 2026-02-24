@@ -1,0 +1,9 @@
+Add this script to your backend/package.json:
+
+"scripts": {
+  ...existing scripts...
+  "fix-index": "node fix-roadmap-index.js"
+}
+
+Then run:
+npm run fix-index

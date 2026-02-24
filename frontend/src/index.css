@@ -1,0 +1,772 @@
+/* stylelint-disable */
+/* AOS Animations - Must be imported first */
+@import 'aos/dist/aos.css';
+
+/* Custom animations for CodeArena */
+@import './styles/animations.css';
+
+/* Tailwind CSS directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* stylelint-enable */
+
+/* Custom background patterns */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3B82F6;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #60A5FA;
+}
+
+/* Custom scrollbar for topic selection */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0F1122;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2563EB;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3B82F6;
+}
+
+/* Smooth animations */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Custom gradient animations */
+@keyframes gradient-shift {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Global typography + smooth UI */
+:root {
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  user-select: none;
+}
+
+body {
+  @apply text-gray-100 min-h-screen;
+  background: linear-gradient(to right, #000001, #000000);
+}
+
+/* 3D Transform utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Neon glow effect */
+.neon-glow {
+  box-shadow:
+    0 0 10px rgba(59, 130, 246, 0.5),
+    0 0 20px rgba(59, 130, 246, 0.3),
+    0 0 30px rgba(59, 130, 246, 0.2);
+}
+
+.neon-glow-cyan {
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.5),
+    0 0 20px rgba(34, 211, 238, 0.3),
+    0 0 30px rgba(34, 211, 238, 0.2);
+}
+
+/* Floating animation */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Pulse glow animation */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(34, 211, 238, 0.8);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Fade in animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Animation classes */
+.animate-fadeInUp {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 0.8s ease-out forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.6s ease-out forwards;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.8s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.8s ease-out forwards;
+}
+
+/* Delay utilities */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
+.delay-600 {
+  animation-delay: 0.6s;
+}
+
+/* Rotate animation */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-rotate {
+  animation: rotate 20s linear infinite;
+}
+
+/* Bounce animation */
+@keyframes bounce-slow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 3s infinite;
+}
+
+/* Glow pulse */
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.8));
+  }
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes bounce-horizontal {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(10px);
+  }
+}
+
+.animate-bounce-horizontal {
+  animation: bounce-horizontal 1s ease-in-out infinite;
+}
+
+/* ============================================
+   Professional Technical Content Display
+   ============================================ */
+
+/* Main Content Container */
+.professional-content {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Prose Container - Professional Typography */
+.prose-container {
+  background: linear-gradient(to bottom, #0f1419, #0a0e14);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 16px;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Content Body */
+.content-body {
+  color: #e5e7eb;
+  line-height: 1.8;
+  font-size: 1.0625rem;
+}
+
+/* Section Headings (##) */
+.section-heading {
+  color: #60a5fa;
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+  letter-spacing: -0.025em;
+}
+
+.section-heading:first-child {
+  margin-top: 0;
+}
+
+/* Bold Section Headings (**Header:**) */
+.section-heading-bold {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.015em;
+}
+
+/* Subsection Headings (###) */
+.subsection-heading {
+  color: #93c5fd;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.015em;
+}
+
+/* Content Paragraphs */
+.content-paragraph {
+  color: #d1d5db;
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.content-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* Bullet Points */
+.bullet-item {
+  color: #d1d5db;
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+  margin-left: 1.5rem;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.bullet-item::before {
+  content: "•";
+  color: #60a5fa;
+  font-weight: bold;
+  font-size: 1.2rem;
+  position: absolute;
+  left: -1rem;
+  top: 0;
+}
+
+/* Numbered Items */
+.numbered-item {
+  color: #d1d5db;
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+  margin-left: 1.5rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.numbered-item .number {
+  color: #60a5fa;
+  font-weight: 700;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Emphasis within content */
+.content-body strong,
+.bullet-item strong,
+.numbered-item strong {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.content-body em {
+  color: #a78bfa;
+  font-style: italic;
+}
+
+.content-body code {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.9em;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Code Examples Section */
+.code-examples-section {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Individual Code Block */
+.code-example-block {
+  background: linear-gradient(to bottom, #1a1f2e, #0f1419);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.code-example-block:hover {
+  border-color: rgba(34, 211, 238, 0.4);
+  box-shadow: 0 6px 25px rgba(34, 211, 238, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Code Header */
+.code-header {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(34, 211, 238, 0.1));
+  border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+  padding: 0.875rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Language Badge */
+.code-language-badge {
+  background: linear-gradient(to right, #3b82f6, #22d3ee);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Code Description */
+.code-description {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Copy Button */
+.copy-button {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-button:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
+  transform: scale(1.05);
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+/* Code Content */
+.code-content {
+  background: #1e1e1e;
+}
+
+/* Syntax Highlighter Overrides */
+.code-content pre {
+  margin: 0 !important;
+  background: #1e1e1e !important;
+}
+
+.code-content code {
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+}
+
+/* Line Numbers Styling */
+.code-content .linenumber {
+  color: #4b5563 !important;
+  min-width: 2.5rem !important;
+  padding-right: 1rem !important;
+  user-select: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .prose-container {
+    padding: 1.5rem;
+  }
+
+  .section-heading {
+    font-size: 1.5rem;
+  }
+
+  .subsection-heading {
+    font-size: 1.25rem;
+  }
+
+  .content-paragraph {
+    font-size: 1rem;
+    text-align: left;
+  }
+
+  .code-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .code-content code {
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .w3schools-content {
+    background: white;
+    color: black;
+  }
+
+  .prose-container {
+    border: 1px solid #ddd;
+    box-shadow: none;
+  }
+
+  .section-heading,
+  .subsection-heading {
+    color: #000;
+  }
+
+  .content-paragraph {
+    color: #333;
+  }
+
+  .code-example-block {
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+  }
+
+  .copy-button {
+    display: none;
+  }
+}
+
+/* Smooth Scrolling for Anchor Links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection Styling */
+.content-body ::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: white;
+}
+
+.content-body ::-moz-selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: white;
+}
+
+/* Focus Styles for Accessibility */
+.copy-button:focus {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+/* Loading Animation for Content */
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.professional-content {
+  animation: contentFadeIn 0.5s ease-out;
+}
+
+/* Blockquote Styling (if needed) */
+.content-body blockquote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  color: #9ca3af;
+  font-style: italic;
+  background: rgba(59, 130, 246, 0.05);
+  padding: 1rem 1.5rem;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Horizontal Rule */
+.content-body hr {
+  border: none;
+  border-top: 2px solid rgba(59, 130, 246, 0.2);
+  margin: 2rem 0;
+}
+
+/* Link Styling within Content */
+.content-body a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-decoration-color: rgba(96, 165, 250, 0.3);
+  text-underline-offset: 3px;
+  transition: all 0.2s ease;
+}
+
+.content-body a:hover {
+  color: #93c5fd;
+  text-decoration-color: rgba(147, 197, 253, 0.6);
+}
+
+/* Table Styling (if needed) */
+.content-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  background: rgba(15, 20, 25, 0.5);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.content-body th,
+.content-body td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.content-body th {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.content-body tr:last-child td {
+  border-bottom: none;
+}
+
+.content-body tr:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
