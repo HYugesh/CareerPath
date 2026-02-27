@@ -179,39 +179,39 @@ export default function ModuleDetail() {
     <div className="min-h-screen bg-black text-white pt-20">
       {/* Header */}
       <div className="border-b border-gray-800/50 bg-gradient-to-r from-[#0A0E14] to-[#0D1117] sticky top-16 z-10 backdrop-blur-sm">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="max-w-[1800px] mx-auto px-4 md:px-6 py-4 md:py-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
               <button
                 onClick={() => navigate(`/roadmap/${roadmapId}`)}
-                className="p-2.5 hover:bg-gray-800/50 rounded-xl transition-all hover:scale-105 active:scale-95"
+                className="p-2 md:p-2.5 hover:bg-gray-800/50 rounded-xl transition-all hover:scale-105 active:scale-95 flex-shrink-0"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <div>
-                <div className="flex items-center gap-3">
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-lg shadow-lg shadow-emerald-500/20">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                  <span className="px-2 md:px-3 py-1 md:py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-lg shadow-lg shadow-emerald-500/20 flex-shrink-0">
                     M{module.moduleId}
                   </span>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent truncate">
                     {module.title}
                   </h1>
                 </div>
-                <p className="text-gray-400 text-sm mt-1.5">{roadmap?.title}</p>
+                <p className="text-gray-400 text-xs md:text-sm mt-1 truncate">{roadmap?.title}</p>
               </div>
             </div>
 
             {/* Progress */}
-            <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-3 md:gap-4 flex-shrink-0">
               <div className="text-right">
-                <div className="text-sm text-gray-400 font-medium">Learning Progress</div>
-                <div className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                <div className="text-xs md:text-sm text-gray-400 font-medium">Learning Progress</div>
+                <div className="text-sm md:text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                   {progressPercentage}% Complete
                 </div>
               </div>
-              <div className="w-40 h-2.5 bg-gray-800/50 rounded-full overflow-hidden border border-gray-700/50">
+              <div className="w-32 md:w-40 h-2 md:h-2.5 bg-gray-800/50 rounded-full overflow-hidden border border-gray-700/50">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercentage}%` }}
@@ -221,12 +221,25 @@ export default function ModuleDetail() {
               </div>
             </div>
           </div>
+          
+          {/* Mobile Progress Bar */}
+          <div className="sm:hidden mt-3 flex items-center gap-2">
+            <div className="flex-1 h-2 bg-gray-800/50 rounded-full overflow-hidden border border-gray-700/50">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercentage}%` }}
+                className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500"
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+            </div>
+            <span className="text-xs font-bold text-cyan-400 flex-shrink-0">{progressPercentage}%</span>
+          </div>
         </div>
       </div>
 
       <div className="flex max-w-[1800px] mx-auto">
-        {/* Left Sidebar - Sub-Components Navigation */}
-        <div className="w-80 border-r border-gray-800/50 bg-gradient-to-b from-[#0A0E14] to-[#0D1117] h-[calc(100vh-140px)] sticky top-[140px] overflow-y-auto custom-scrollbar">
+        {/* Left Sidebar - Sub-Components Navigation - Hidden on mobile, drawer on tablet */}
+        <div className="hidden lg:block w-80 border-r border-gray-800/50 bg-gradient-to-b from-[#0A0E14] to-[#0D1117] h-[calc(100vh-140px)] sticky top-[140px] overflow-y-auto custom-scrollbar">
           <div className="p-6">
             <div className="mb-6 pb-4 border-b border-gray-800/50">
               <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -331,7 +344,25 @@ export default function ModuleDetail() {
         </div>
 
         {/* Right Content Area */}
-        <div className="flex-1 p-8 overflow-y-auto">
+        <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+          {/* Mobile Topic Selector */}
+          <div className="lg:hidden mb-6">
+            <select
+              value={selectedSubComponent?.subComponentId || ''}
+              onChange={(e) => {
+                const subComp = module.subComponents.find(sc => sc.subComponentId === parseInt(e.target.value));
+                if (subComp) setSelectedSubComponent(subComp);
+              }}
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            >
+              {module.subComponents && module.subComponents.map((sc, idx) => (
+                <option key={sc.subComponentId} value={sc.subComponentId}>
+                  {idx + 1}. {sc.title} {sc.status === 'REVIEWED' ? '✓' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {selectedSubComponent ? (
             <motion.div
               key={selectedSubComponent.subComponentId}
@@ -340,13 +371,13 @@ export default function ModuleDetail() {
               transition={{ duration: 0.3 }}
             >
               {/* Sub-Component Header */}
-              <div className="mb-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="px-4 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-bold rounded-full shadow-lg shadow-cyan-500/30">
+              <div className="mb-6 md:mb-8">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                  <span className="px-3 md:px-4 py-1 md:py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-bold rounded-full shadow-lg shadow-cyan-500/30">
                     Topic {module.subComponents.findIndex(sc => sc.subComponentId === selectedSubComponent.subComponentId) + 1} of {totalCount}
                   </span>
                   <span className={`
-                    px-4 py-1.5 text-xs font-bold rounded-full border
+                    px-3 md:px-4 py-1 md:py-1.5 text-xs font-bold rounded-full border
                     ${selectedSubComponent.status === 'REVIEWED'
                       ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-400 border-emerald-500/30'
                       : selectedSubComponent.status === 'IN_PROGRESS'
@@ -357,7 +388,7 @@ export default function ModuleDetail() {
                     {selectedSubComponent.status.replace('_', ' ')}
                   </span>
                 </div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-2">
+                <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-2">
                   {selectedSubComponent.title}
                 </h2>
               </div>

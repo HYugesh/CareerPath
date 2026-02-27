@@ -130,17 +130,17 @@ export default function Dashboard() {
         animate="visible"
       >
         {/* Header Section */}
-        <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-4 md:gap-6">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mb-2">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mb-2">
               Welcome back, {user?.name?.split(' ')[0] || 'Explorer'} 👋
             </h1>
-            <p className="text-gray-400 text-lg">Your learning journey continues here.</p>
+            <p className="text-gray-400 text-base md:text-lg">Your learning journey continues here.</p>
           </div>
 
           <Link
             to="/roadmap/create-personalized"
-            className="group flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+            className="group flex items-center gap-2 px-5 md:px-6 py-2.5 md:py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] w-full sm:w-auto justify-center"
           >
             <Plus className="w-5 h-5" />
             <span>New Roadmap</span>
@@ -149,7 +149,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16">
           <StatCard
             icon={<Award className="w-6 h-6 text-yellow-400" />}
             value={`${stats.averageScore}%`}
@@ -180,15 +180,15 @@ export default function Dashboard() {
           />
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           {/* Main Column: Roadmaps */}
-          <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
+          <motion.div variants={itemVariants} className="lg:col-span-2 space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <BookOpen className="w-6 h-6 text-blue-400" />
+              <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
                 Active Roadmaps
               </h2>
-              <Link to="/roadmap" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link to="/roadmap" className="text-xs md:text-sm text-gray-400 hover:text-white transition-colors">
                 View All
               </Link>
             </div>
@@ -211,12 +211,12 @@ export default function Dashboard() {
           </motion.div>
 
           {/* Side Column: Quick Actions */}
-          <motion.div variants={itemVariants} className="space-y-6">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Zap className="w-6 h-6 text-yellow-400" />
+          <motion.div variants={itemVariants} className="space-y-4 md:space-y-6">
+            <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+              <Zap className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
               Quick Actions
             </h2>
-            <div className="grid gap-4">
+            <div className="grid gap-3 md:gap-4">
               <QuickActionCard
                 to="/assessment"
                 icon={<Code2 className="w-6 h-6" />}
@@ -252,28 +252,28 @@ export default function Dashboard() {
         </div>
 
         {/* Digital Presence & Career Section */}
-        <div className="mt-16 grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="mt-12 md:mt-16 grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
           <div className="xl:col-span-2">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl text-white shadow-lg shadow-blue-500/20">
-                <FileCheck className="w-6 h-6" />
+            <div className="flex items-center gap-3 mb-6 md:mb-8">
+              <div className="p-2 md:p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl md:rounded-2xl text-white shadow-lg shadow-blue-500/20">
+                <FileCheck className="w-5 h-5 md:w-6 md:h-6" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-white">Resume Optimizer</h2>
-                <p className="text-gray-400">AI-powered technical evaluation</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-white">Resume Optimizer</h2>
+                <p className="text-sm md:text-base text-gray-400">AI-powered technical evaluation</p>
               </div>
             </div>
             <ResumeAnalysis />
           </div>
 
           <div className="xl:col-span-1">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl text-white shadow-lg shadow-purple-500/20">
-                <Globe className="w-6 h-6" />
+            <div className="flex items-center gap-3 mb-6 md:mb-8">
+              <div className="p-2 md:p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl md:rounded-2xl text-white shadow-lg shadow-purple-500/20">
+                <Globe className="w-5 h-5 md:w-6 md:h-6" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-white">Portfolios</h2>
-                <p className="text-gray-400">Live project links</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-white">Portfolios</h2>
+                <p className="text-sm md:text-base text-gray-400">Live project links</p>
               </div>
             </div>
             <PortfolioLinks />
@@ -308,9 +308,9 @@ function RoadmapCard({ roadmap, onDelete, completedSteps, totalSteps }) {
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <div className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-6 hover:border-blue-500/50 transition-all duration-300">
-      <div className="flex items-center gap-6">
-        <div className="w-16 h-16 flex-shrink-0">
+    <div className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 md:p-6 hover:border-blue-500/50 transition-all duration-300">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6">
+        <div className="w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
           <CircularProgressbar
             value={percentage}
             text={`${percentage}%`}
@@ -324,32 +324,32 @@ function RoadmapCard({ roadmap, onDelete, completedSteps, totalSteps }) {
           />
         </div>
 
-        <div className="flex-grow">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+        <div className="flex-grow w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+            <div className="flex-1">
+              <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
                 {roadmap.title || roadmap.primaryDomain || 'Untitled Roadmap'}
               </h3>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-xs md:text-sm text-gray-400 mt-1">
                 {completed} of {total} steps completed
               </p>
             </div>
 
             <button
               onClick={() => onDelete(roadmap._id)}
-              className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+              className="opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all self-end sm:self-auto"
               title="Delete Roadmap"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
 
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-col sm:flex-row gap-2 md:gap-3">
             <Link
               to={`/roadmap/${roadmap._id}`}
-              className="text-sm font-semibold bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-white border border-white/5 transition-all flex items-center gap-2"
+              className="text-xs md:text-sm font-semibold bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-white border border-white/5 transition-all flex items-center justify-center gap-2"
             >
-              Continue Learning <ArrowRight className="w-4 h-4" />
+              Continue Learning <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
             </Link>
           </div>
         </div>

@@ -24,6 +24,8 @@ export default function Quiz() {
   const [questionStatus, setQuestionStatus] = useState([]);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  // Desktop: open by default, Mobile: closed by default
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -212,16 +214,16 @@ export default function Quiz() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
       {/* Top Header Bar */}
-      <header className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-40 px-4 py-3 flex items-center justify-between shadow-md">
+      <header className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-40 px-3 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-blue-500">AI</span>
-          <span className="text-xl font-bold text-white">Learning</span>
+          <span className="text-lg md:text-xl font-bold text-blue-500">AI</span>
+          <span className="text-lg md:text-xl font-bold text-white">Learning</span>
         </div>
 
         {/* Timer */}
-        <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-white font-semibold shadow-sm ${timeLeft < 60 ? 'bg-red-600 animate-pulse' : 'bg-blue-600'
+        <div className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full text-white font-semibold shadow-sm text-sm md:text-base ${timeLeft < 60 ? 'bg-red-600 animate-pulse' : 'bg-blue-600'
           }`}>
-          <Clock className="w-4 h-4" />
+          <Clock className="w-3 h-3 md:w-4 md:h-4" />
           <span>{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
         </div>
 
@@ -229,7 +231,7 @@ export default function Quiz() {
         {!isRoadmapMode && !isSubTopicMode && (
           <button
             onClick={() => setShowSubmitModal(true)}
-            className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-colors shadow-sm"
+            className="hidden sm:block px-4 md:px-6 py-1.5 md:py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-colors shadow-sm text-sm md:text-base"
           >
             Submit Assessment
           </button>
@@ -237,83 +239,159 @@ export default function Quiz() {
         
         {/* Roadmap/Sub-topic mode: Show quiz info instead */}
         {(isRoadmapMode || isSubTopicMode) && (
-          <div className="text-sm text-gray-400">
+          <div className="text-xs md:text-sm text-gray-400">
             {isSubTopicMode ? 'Sub-Topic Quiz' : 'Module Quiz'}
           </div>
         )}
       </header>
 
-      <div className="flex pt-16">
-        {/* Left Sidebar */}
-        <aside className="fixed left-0 top-16 bottom-0 w-64 bg-gray-900 border-r border-gray-800 p-4 overflow-y-auto custom-scrollbar">
-          {/* Assessment Info */}
-          <div className="mb-6 pb-4 border-b border-gray-800">
-            <h2 className="font-bold text-white text-sm">
-              {session.domain} - {session.difficulty}
-            </h2>
-            <p className="text-xs text-gray-400 mt-1">Assessment</p>
-          </div>
+      <div className="flex pt-12 md:pt-16">
+        {/* Overlay for mobile when sidebar is open */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
 
-          {/* Questions Section */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-300 text-sm mb-3">Questions</h3>
-            <p className="text-xs text-gray-500 mb-3">Multiple Choice Questions</p>
+        {/* Floating Open Button - Shows when sidebar is closed */}
+        {!isSidebarOpen && (
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="fixed left-0 top-24 md:top-28 z-30 p-2 rounded-r-lg bg-gray-900/80 hover:bg-gray-800/90 text-gray-400 hover:text-white border border-l-0 border-gray-700 transition-all duration-300"
+            title="Open question navigator"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
 
-            {/* Question Grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {questionStatus.map((status, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentQuestionIndex(index)}
-                  className={`w-7 h-7 rounded text-xs font-medium flex items-center justify-center transition-all ${index === currentQuestionIndex
-                    ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-gray-900'
-                    : ''
-                    } ${status === 'answered'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                    }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* Unified Sidebar - Works on all screen sizes */}
+        <aside className={`fixed left-0 top-12 md:top-16 bottom-0 bg-gray-900 border-r border-gray-800 overflow-y-auto custom-scrollbar transition-all duration-300 z-50 ${
+          isSidebarOpen ? 'translate-x-0 w-64 md:w-56 lg:w-64 p-4' : '-translate-x-full'
+        }`}>
+          {/* Toggle Button */}
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="absolute top-3 right-2 p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors z-10"
+            title={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+          >
+            <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${isSidebarOpen ? 'rotate-180' : ''}`} />
+          </button>
 
-          {/* Legend */}
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-blue-600 rounded"></span>
-              <span className="text-gray-400">Attempted</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-gray-700 rounded"></span>
-              <span className="text-gray-400">Not Attempted</span>
-            </div>
-          </div>
+          {isSidebarOpen && (
+            <>
+              {/* Assessment Info */}
+              <div className="mb-6 pb-4 border-b border-gray-800 mt-10">
+                <h2 className="font-bold text-white text-sm">
+                  {session.domain} - {session.difficulty}
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">Assessment</p>
+              </div>
+
+              {/* Question Navigator - Inline */}
+              <div>
+                {/* Questions Section */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-300 text-xs">Questions</h3>
+                    <span className="text-[10px] text-gray-500">{session.questions.length} total</span>
+                  </div>
+                  
+                  {/* Question Grid */}
+                  <div className={`grid gap-0.5 p-1 ${
+                    session.questions.length <= 5 ? 'grid-cols-5' :
+                    session.questions.length <= 10 ? 'grid-cols-5' :
+                    session.questions.length <= 15 ? 'grid-cols-6' :
+                    session.questions.length <= 20 ? 'grid-cols-7' :
+                    session.questions.length <= 30 ? 'grid-cols-8' :
+                    session.questions.length <= 40 ? 'grid-cols-9' :
+                    session.questions.length <= 50 ? 'grid-cols-10' : 'grid-cols-12'
+                  }`}>
+                    {questionStatus.map((status, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setCurrentQuestionIndex(index);
+                          // Auto-close on mobile after selection
+                          if (window.innerWidth < 768) {
+                            setIsSidebarOpen(false);
+                          }
+                        }}
+                        className={`
+                          relative rounded-md text-[11px] font-bold
+                          flex items-center justify-center transition-all duration-200
+                          h-9 w-9
+                          ${index === currentQuestionIndex
+                            ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-gray-900 scale-105 z-10'
+                            : 'hover:scale-105'
+                          }
+                          ${status === 'answered'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                          }
+                        `}
+                        title={`Question ${index + 1}${status === 'answered' ? ' (Answered)' : ' (Not Attempted)'}`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="text-[11px] bg-gray-800/20 rounded-md p-2 space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 bg-blue-600 rounded-sm"></div>
+                    <span className="text-gray-400">Answered</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 bg-gray-700 rounded-sm"></div>
+                    <span className="text-gray-400">Not Attempted</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 border-2 border-blue-400 rounded-sm"></div>
+                    <span className="text-gray-400">Current</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 ml-64 p-8">
+        {/* Main Content - Adjusts margin on desktop when sidebar is open */}
+        <main className={`flex-1 p-4 md:p-6 lg:p-8 transition-all duration-300 ${
+          isSidebarOpen ? 'lg:ml-64' : ''
+        }`}>
           <div className="max-w-3xl mx-auto">
             {/* Question */}
             {currentQuestion && (
-              <div className="mb-8">
-                <p className="text-white text-xl mb-4 font-medium leading-relaxed">{currentQuestion.questionText}</p>
-                <p className="text-sm text-gray-400 mb-6 uppercase tracking-wider font-semibold">Choose the Correct Option:</p>
+              <div className="mb-6 md:mb-8">
+                {/* Question Number Badge - Mobile */}
+                <div className="md:hidden mb-4 flex items-center justify-between">
+                  <span className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg">
+                    Question {currentQuestionIndex + 1} of {session.questions.length}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {session.domain} - {session.difficulty}
+                  </span>
+                </div>
+
+                <p className="text-white text-lg md:text-xl mb-3 md:mb-4 font-medium leading-relaxed">{currentQuestion.questionText}</p>
+                <p className="text-xs md:text-sm text-gray-400 mb-4 md:mb-6 uppercase tracking-wider font-semibold">Choose the Correct Option:</p>
 
                 {/* Options */}
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {currentQuestion.options.map((option, index) => (
                     <label
                       key={index}
-                      className={`flex items-center p-5 rounded-xl border cursor-pointer transition-all group ${answers[currentQuestionIndex] === option
+                      className={`flex items-center p-4 md:p-5 rounded-xl border cursor-pointer transition-all group ${answers[currentQuestionIndex] === option
                         ? 'border-blue-500 bg-blue-900/30'
                         : 'border-gray-700 bg-gray-800 hover:border-gray-500 hover:bg-gray-700'
                         }`}
                     >
-                      <div className={`relative flex items-center justify-center w-5 h-5 rounded-full border ${answers[currentQuestionIndex] === option ? 'border-blue-500' : 'border-gray-500 group-hover:border-gray-400'} mr-4 shrink-0`}>
+                      <div className={`relative flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full border ${answers[currentQuestionIndex] === option ? 'border-blue-500' : 'border-gray-500 group-hover:border-gray-400'} mr-3 md:mr-4 shrink-0`}>
                         {answers[currentQuestionIndex] === option && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                          <div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-blue-500"></div>
                         )}
                       </div>
                       <input
@@ -324,7 +402,7 @@ export default function Quiz() {
                         onChange={() => handleAnswerSelect(currentQuestionIndex, option)}
                         className="hidden"
                       />
-                      <span className={`text-lg ${answers[currentQuestionIndex] === option ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>{option}</span>
+                      <span className={`text-base md:text-lg ${answers[currentQuestionIndex] === option ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>{option}</span>
                     </label>
                   ))}
                 </div>
@@ -332,17 +410,17 @@ export default function Quiz() {
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between items-center pt-8 border-t border-gray-800">
+            <div className="flex justify-between items-center pt-6 md:pt-8 border-t border-gray-800 gap-3">
               <button
                 onClick={handlePrevious}
                 disabled={currentQuestionIndex === 0}
-                className="flex items-center gap-2 px-6 py-3 border border-gray-700 rounded-lg font-medium text-gray-300 hover:bg-gray-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center justify-center gap-1 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 border border-gray-700 rounded-lg font-medium text-gray-300 hover:bg-gray-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm md:text-base"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                 Previous
               </button>
 
-              <span className="text-sm text-gray-500 font-medium">
+              <span className="text-xs md:text-sm text-gray-500 font-medium whitespace-nowrap px-1">
                 Question <span className="text-white">{currentQuestionIndex + 1}</span> of <span className="text-white">{session.questions.length}</span>
               </span>
 
@@ -359,18 +437,18 @@ export default function Quiz() {
                     }
                   }}
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-1 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Assessment'}
-                  <ChevronRight className="w-5 h-5" />
+                  {isSubmitting ? 'Submitting...' : 'Submit'}
+                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               ) : (
                 <button
                   onClick={handleNext}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-blue-500/20"
+                  className="flex items-center justify-center gap-1 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors shadow-lg shadow-blue-500/20 text-sm md:text-base"
                 >
                   Next
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               )}
             </div>
@@ -473,7 +551,7 @@ export default function Quiz() {
                     Submitting...
                   </span>
                 ) : (
-                  'Submit Assessment'
+                  'Submit'
                 )}
               </button>
             </div>

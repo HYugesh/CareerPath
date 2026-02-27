@@ -163,24 +163,24 @@ export default function Assessment() {
             style={{ background: 'linear-gradient(to right, #000001, #000000)' }}
         >
             {/* Hero Section */}
-            <div className="relative pt-24 pb-8">
+            <div className="relative pt-20 md:pt-24 pb-6 md:pb-8">
                 <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-                <div className="max-w-6xl mx-auto px-6 relative">
-                    <div className="text-center mb-16" data-aos="fade-up">
+                <div className="max-w-6xl mx-auto px-4 md:px-6 relative">
+                    <div className="text-center mb-12 md:mb-16" data-aos="fade-up">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ duration: 0.5 }}
-                            className="inline-flex items-center px-4 py-2 rounded-full bg-gray-800 border border-gray-700 text-blue-400 font-semibold mb-6 shadow-lg"
+                            className="inline-flex items-center px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gray-800 border border-gray-700 text-blue-400 font-semibold mb-4 md:mb-6 shadow-lg text-sm md:text-base"
                         >
-                            <span className="text-2xl mr-2">🧠</span>
+                            <span className="text-xl md:text-2xl mr-2">🧠</span>
                             AI-Powered Assessment
                         </motion.div>
                         <motion.h1
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
-                            className="text-4xl md:text-5xl font-bold mb-6 text-white"
+                            className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-white px-4"
                         >
                             Test Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Technical Skills</span>
                         </motion.h1>
@@ -188,14 +188,14 @@ export default function Assessment() {
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.6, delay: 0.3 }}
-                            className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed"
+                            className="text-base md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed px-4"
                         >
                             Choose your domain and take our AI-powered assessment to discover your strengths, identify areas for improvement, and get personalized learning recommendations.
                         </motion.p>
                     </div>
 
                     {/* Assessment Features */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         {[
                             { icon: '⚡', title: 'Instant Results', desc: 'Get immediate feedback and detailed analysis of your performance', gradient: 'from-blue-500 to-cyan-500', bgColor: 'bg-gray-900', borderColor: 'border-gray-800' },
                             { icon: '🎯', title: 'Personalized Questions', desc: 'AI-generated questions tailored to your skill level and domain', gradient: 'from-cyan-500 to-emerald-500', bgColor: 'bg-gray-900', borderColor: 'border-gray-800' },
@@ -226,24 +226,24 @@ export default function Assessment() {
             </div>
 
             {/* Domain Selection */}
-            <div className="max-w-6xl mx-auto px-6 pb-20">
+            <div className="max-w-6xl mx-auto px-4 md:px-6 pb-16 md:pb-20">
                 {/* Custom Quiz Section */}
-                <div className="mb-12">
-                    <div className="bg-[#0f1115] rounded-2xl p-8 border border-gray-800 hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden group">
+                <div className="mb-8 md:mb-12">
+                    <div className="bg-[#0f1115] rounded-xl md:rounded-2xl p-6 md:p-8 border border-gray-800 hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden group">
                         {/* Subtle Background Glow */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none"></div>
 
-                        <div className="flex items-center justify-between mb-6 relative z-10">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 md:mb-6 relative z-10 gap-4">
                             <div>
-                                <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-                                    <span className="p-2 bg-blue-500/10 rounded-lg text-blue-400">🎨</span>
+                                <h3 className="text-xl md:text-2xl font-bold text-white mb-2 flex items-center gap-2 md:gap-3">
+                                    <span className="p-1.5 md:p-2 bg-blue-500/10 rounded-lg text-blue-400 text-lg md:text-base">🎨</span>
                                     Create Custom Quiz
                                 </h3>
-                                <p className="text-gray-400">Generate a quiz on any topic you want to test</p>
+                                <p className="text-sm md:text-base text-gray-400">Generate a quiz on any topic you want to test</p>
                             </div>
                             <button
                                 onClick={() => setShowCustomQuiz(!showCustomQuiz)}
-                                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg shadow-blue-900/20"
+                                className="w-full md:w-auto px-5 md:px-6 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg shadow-blue-900/20 text-sm md:text-base"
                             >
                                 {showCustomQuiz ? 'Hide' : 'Create Custom Quiz'}
                             </button>
@@ -286,17 +286,17 @@ export default function Assessment() {
                     </div>
                 </div>
 
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold text-white mb-4">Or Choose a Domain</h2>
-                    <p className="text-gray-400 text-lg">Select from our curated technology domains</p>
+                <div className="text-center mb-8 md:mb-12">
+                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4">Or Choose a Domain</h2>
+                    <p className="text-base md:text-lg text-gray-400">Select from our curated technology domains</p>
                 </div>
 
                 {loading ? (
                     <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                         {domains.map((domain, index) => {
                             const domainData = getDomainData(domain.name);
 

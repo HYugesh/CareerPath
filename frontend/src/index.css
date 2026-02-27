@@ -638,6 +638,55 @@ body {
   }
 }
 
+/* Mobile-First Responsive Utilities */
+@media (max-width: 640px) {
+  /* Touch-friendly sizing */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Mobile scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  /* Mobile-optimized spacing */
+  .mobile-px {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .mobile-py {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  /* Mobile text sizing */
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+
+  .mobile-text-base {
+    font-size: 1rem;
+  }
+
+  /* Hide on mobile */
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  /* Full width on mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+
+  /* Stack on mobile */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+}
+
 /* Print Styles */
 @media print {
   .w3schools-content {
