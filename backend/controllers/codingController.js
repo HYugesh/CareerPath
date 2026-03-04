@@ -153,7 +153,7 @@ const generateStaticCodingProblems = (topic, difficulty, language, count) => {
   const shuffled = [...problems].sort(() => Math.random() - 0.5);
   const selected = shuffled.slice(0, count);
 
-  // Format problems with proper starter code
+  // Format problems with proper starter code and convert test cases to stdin format
   return selected.map((problem, index) => ({
     id: index + 1,
     title: problem.title,
@@ -161,8 +161,43 @@ const generateStaticCodingProblems = (topic, difficulty, language, count) => {
     constraints: problem.constraints,
     examples: problem.examples,
     starterCode: getStarterCodeTemplate(language, 'solution', 'params'),
-    testCases: problem.testCases
+    testCases: problem.testCases.map(tc => convertTestCaseToStdin(tc))
   }));
+};
+
+// Helper function to convert test case input format to stdin format
+const convertTestCaseToStdin = (testCase) => {
+  // Extract input and convert to stdin format
+  let stdin = testCase.input;
+  
+  // Remove array brackets and convert comma-separated to space-separated
+  // Example: '[2,7,11,15], 9' -> '2 7 11 15\n9'
+  if (stdin.includes('[') && stdin.includes(']')) {
+    // Split by comma outside brackets
+    const parts = stdin.split(/\],\s*/);
+    
+    if (parts.length >= 2) {
+      // First part is the array
+      const arrayPart = parts[0].replace(/[\[\]]/g, '').replace(/,/g, ' ').trim();
+      // Second part is the target/other input
+      const otherPart = parts[1].replace(/[\[\]]/g, '').trim();
+      stdin = `${arrayPart}\n${otherPart}`;
+    } else {
+      // Single array input
+      stdin = stdin.replace(/[\[\]]/g, '').replace(/,/g, ' ').trim();
+    }
+  }
+  
+  // Keep expected output exactly as shown in problem statement
+  // The expected output should match what's shown in examples
+  // If it has brackets in the problem statement, keep them
+  let expectedOutput = testCase.expectedOutput;
+  
+  return {
+    stdin: stdin,
+    expectedOutput: expectedOutput,
+    isHidden: testCase.isHidden
+  };
 };
 
 // Create mock execution results

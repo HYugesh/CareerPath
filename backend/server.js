@@ -23,6 +23,7 @@ const resumeRoutes = require("./routes/resumeRoutes");
 const portfolioRoutes = require("./routes/portfolioRoutes");
 const requirementsRoutes = require("./routes/requirementsRoutes");
 const roadmapRoutes = require("./routes/roadmapRoutes");
+const codeExecutionRoutes = require("./routes/codeExecutionRoutes");
 
 const app = express();
 
@@ -92,6 +93,7 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/requirements", requirementsRoutes);
 app.use("/api/roadmaps", roadmapRoutes);
+app.use("/api/code", codeExecutionRoutes);
 
 // Enhanced module system routes
 app.use("/api/roadmaps", require("./routes/moduleRoutes"));

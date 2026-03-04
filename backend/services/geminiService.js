@@ -212,22 +212,67 @@ async function generateCodingProblems(topics, difficulty, count) {
 
   const prompt = `Generate ${count} unique ${difficulty} DSA problems for: ${topics.join(', ')}.
 
-Requirements:
-- LeetCode-style format
-- Each problem completely different
-- Include examples and test cases
+CRITICAL REQUIREMENTS:
+- LeetCode/Codeforces-style format
+- Each problem must be completely different
+- Test cases MUST use stdin format (NOT JSON)
+- Input format must be plain text that can be read from stdin
+- Follow competitive programming conventions
 
-Return JSON array:
+INPUT FORMAT RULES:
+1. Use space-separated values for arrays: "2 7 11 15"
+2. Use newlines to separate different inputs: "2 7 11 15\\n9"
+3. First line often contains array size or count
+4. NO JSON objects in stdin
+5. Plain text only
+
+EXAMPLE TEST CASE FORMAT:
+For Two Sum problem:
+- stdin: "4\\n2 7 11 15\\n9"
+  (4 = array size, "2 7 11 15" = array, 9 = target)
+- expected_output: "0 1"
+
+For Maximum Subarray:
+- stdin: "9\\n-2 1 -3 4 -1 2 1 -5 4"
+  (9 = array size, followed by array elements)
+- expected_output: "6"
+
+Return JSON array with this EXACT structure:
 [{
   "id": 1,
   "title": "Problem Title",
   "difficulty": "${difficulty}",
   "topic": "${topics[0]}",
-  "description": "Problem statement",
-  "examples": [{"input": "...", "output": "...", "explanation": "..."}],
-  "constraints": ["constraint1"],
-  "testCases": [{"input": "...", "expectedOutput": "...", "isHidden": false}]
-}]`;
+  "description": "Clear problem statement with input/output format explained",
+  "input_format": "Detailed explanation of stdin format (e.g., 'First line: array size n\\nSecond line: n space-separated integers\\nThird line: target value')",
+  "output_format": "Explanation of expected output format",
+  "examples": [
+    {
+      "input": "Example stdin text (e.g., '4\\n2 7 11 15\\n9')",
+      "output": "Example output (e.g., '0 1')",
+      "explanation": "Why this output is correct"
+    }
+  ],
+  "constraints": ["1 ≤ n ≤ 10^4", "constraint2"],
+  "testCases": [
+    {
+      "stdin": "Plain text input exactly as it appears in stdin",
+      "expectedOutput": "Expected output as plain text",
+      "isHidden": false
+    },
+    {
+      "stdin": "Another test case stdin",
+      "expectedOutput": "Expected output",
+      "isHidden": true
+    }
+  ]
+}]
+
+IMPORTANT: 
+- stdin field must contain ONLY plain text, NO JSON
+- Use \\n for newlines in stdin
+- Use spaces to separate array elements
+- Include at least 3 test cases per problem (2 public, 1+ hidden)`;
 
   try {
     const jsonResponse = await callGemini(prompt, {
@@ -246,14 +291,15 @@ Return JSON array:
       difficulty: p.difficulty || difficulty,
       topic: p.topic || topics[index % topics.length],
       description: p.description || 'Problem description not available.',
+      input_format: p.input_format || 'Input format not specified',
+      output_format: p.output_format || 'Output format not specified',
       examples: Array.isArray(p.examples) ? p.examples : [],
       constraints: Array.isArray(p.constraints) ? p.constraints : [],
       testCases: Array.isArray(p.testCases) && p.testCases.length >= 2 ? p.testCases : [
-        { input: 'sample_input', expectedOutput: 'sample_output', isHidden: false },
-        { input: 'edge_case', expectedOutput: 'edge_output', isHidden: true }
+        { stdin: '3\\n1 2 3', expectedOutput: '6', isHidden: false },
+        { stdin: '5\\n-1 -2 -3 -4 -5', expectedOutput: '-1', isHidden: true }
       ]
     }));
-
 
     return formattedProblems;
 
@@ -378,7 +424,7 @@ function createFallbackEvaluation(correct, total, percentage) {
 }
 
 /**
- * Fallback coding problems
+ * Fallback coding problems with stdin format
  */
 function generateFallbackCodingProblems(topics, difficulty, count) {
 
@@ -386,22 +432,80 @@ function generateFallbackCodingProblems(topics, difficulty, count) {
     'Arrays': [
       {
         title: 'Two Sum',
-        description: 'Given an array of integers nums and an integer target, return indices of the two numbers that add up to target.',
-        examples: [{ input: 'nums = [2,7,11,15], target = 9', output: '[0,1]', explanation: 'nums[0] + nums[1] == 9' }],
-        constraints: ['2 ≤ nums.length ≤ 10⁴'],
+        description: 'Given an array of integers nums and an integer target, return indices of the two numbers that add up to target.\n\nYour program should read from stdin and write to stdout.',
+        input_format: 'First line: integer n (array size)\nSecond line: n space-separated integers (array elements)\nThird line: integer target',
+        output_format: 'Two space-separated integers representing the indices',
+        examples: [
+          { 
+            input: '4\n2 7 11 15\n9', 
+            output: '0 1', 
+            explanation: 'nums[0] + nums[1] = 2 + 7 = 9' 
+          }
+        ],
+        constraints: ['2 ≤ n ≤ 10⁴', '-10⁹ ≤ nums[i] ≤ 10⁹'],
         testCases: [
-          { input: '[2,7,11,15], 9', expectedOutput: '[0,1]', isHidden: false },
-          { input: '[3,2,4], 6', expectedOutput: '[1,2]', isHidden: true }
+          { stdin: '4\n2 7 11 15\n9', expectedOutput: '0 1', isHidden: false },
+          { stdin: '3\n3 2 4\n6', expectedOutput: '1 2', isHidden: true },
+          { stdin: '2\n3 3\n6', expectedOutput: '0 1', isHidden: true }
         ]
       },
       {
         title: 'Maximum Subarray',
-        description: 'Find the contiguous subarray with the largest sum.',
-        examples: [{ input: 'nums = [-2,1,-3,4,-1,2,1,-5,4]', output: '6', explanation: '[4,-1,2,1] has sum 6' }],
-        constraints: ['1 ≤ nums.length ≤ 10⁵'],
+        description: 'Find the contiguous subarray with the largest sum and return the sum.\n\nYour program should read from stdin and write to stdout.',
+        input_format: 'First line: integer n (array size)\nSecond line: n space-separated integers (array elements)',
+        output_format: 'Single integer representing the maximum sum',
+        examples: [
+          { 
+            input: '9\n-2 1 -3 4 -1 2 1 -5 4', 
+            output: '6', 
+            explanation: 'Subarray [4,-1,2,1] has the largest sum = 6' 
+          }
+        ],
+        constraints: ['1 ≤ n ≤ 10⁵', '-10⁴ ≤ nums[i] ≤ 10⁴'],
         testCases: [
-          { input: '[-2,1,-3,4,-1,2,1,-5,4]', expectedOutput: '6', isHidden: false },
-          { input: '[1]', expectedOutput: '1', isHidden: true }
+          { stdin: '9\n-2 1 -3 4 -1 2 1 -5 4', expectedOutput: '6', isHidden: false },
+          { stdin: '1\n1', expectedOutput: '1', isHidden: true },
+          { stdin: '5\n-1 -2 -3 -4 -5', expectedOutput: '-1', isHidden: true }
+        ]
+      },
+      {
+        title: 'Find Missing Number',
+        description: 'Given an array containing n distinct numbers in the range [0, n], return the only number that is missing.\n\nYour program should read from stdin and write to stdout.',
+        input_format: 'First line: integer n (array size)\nSecond line: n space-separated integers',
+        output_format: 'Single integer representing the missing number',
+        examples: [
+          { 
+            input: '3\n3 0 1', 
+            output: '2', 
+            explanation: 'n = 3 since there are 3 numbers, so all numbers are in range [0,3]. 2 is missing.' 
+          }
+        ],
+        constraints: ['1 ≤ n ≤ 10⁴'],
+        testCases: [
+          { stdin: '3\n3 0 1', expectedOutput: '2', isHidden: false },
+          { stdin: '2\n0 1', expectedOutput: '2', isHidden: true },
+          { stdin: '9\n9 6 4 2 3 5 7 0 1', expectedOutput: '8', isHidden: true }
+        ]
+      }
+    ],
+    'Strings': [
+      {
+        title: 'Valid Palindrome',
+        description: 'Given a string s, return true if it is a palindrome, false otherwise. Consider only alphanumeric characters and ignore cases.\n\nYour program should read from stdin and write to stdout.',
+        input_format: 'Single line: string s',
+        output_format: 'true or false',
+        examples: [
+          { 
+            input: 'A man, a plan, a canal: Panama', 
+            output: 'true', 
+            explanation: 'After removing non-alphanumeric and converting to lowercase: "amanaplanacanalpanama" is a palindrome' 
+          }
+        ],
+        constraints: ['1 ≤ s.length ≤ 2 × 10⁵'],
+        testCases: [
+          { stdin: 'A man, a plan, a canal: Panama', expectedOutput: 'true', isHidden: false },
+          { stdin: 'race a car', expectedOutput: 'false', isHidden: true },
+          { stdin: ' ', expectedOutput: 'true', isHidden: true }
         ]
       }
     ]
@@ -418,6 +522,8 @@ function generateFallbackCodingProblems(topics, difficulty, count) {
       difficulty,
       topic: topics[i % topics.length],
       description: template.description,
+      input_format: template.input_format,
+      output_format: template.output_format,
       examples: template.examples,
       constraints: template.constraints,
       testCases: template.testCases
