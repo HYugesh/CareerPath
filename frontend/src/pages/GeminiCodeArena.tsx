@@ -221,7 +221,7 @@ const GeminiCodeArena = () => {
   const [showFullscreenNotification, setShowFullscreenNotification] = useState(false);
   const [fullscreenError, setFullscreenError] = useState<string | null>(null);
 
-  // Code Execution State (for Piston API integration)
+  // Code Execution State (for Judge0 API integration)
   const [testResults, setTestResults] = useState<ExecutionResponse | null>(null);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -687,7 +687,7 @@ const GeminiCodeArena = () => {
       setLoading(false);
     }
   };
-  // Run Code - Execute code with public test cases using Piston API
+  // Run Code - Execute code with public test cases using Judge0 API
   const handleRunCode = async () => {
     // Disable Run button and set loading state
     setIsRunning(true);
@@ -796,7 +796,7 @@ const GeminiCodeArena = () => {
     }
   };
 
-  // Submit Code - Submit code with all test cases using Piston API
+  // Submit Code - Submit code with all test cases using Judge0 API
   const handleSubmitCode = async () => {
     // Disable Submit button and set loading state
     setIsSubmitting(true);
