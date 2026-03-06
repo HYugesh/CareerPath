@@ -206,7 +206,7 @@ Return JSON:
 }
 
 /**
- * Generate coding problems
+ * Generate coding problems with 10 test cases (2 public, 8 private)
  */
 async function generateCodingProblems(topics, difficulty, count) {
 
@@ -218,6 +218,7 @@ CRITICAL REQUIREMENTS:
 - Test cases MUST use stdin format (NOT JSON)
 - Input format must be plain text that can be read from stdin
 - Follow competitive programming conventions
+- Generate EXACTLY 10 test cases per problem (2 public, 8 private)
 
 INPUT FORMAT RULES:
 1. Use space-separated values for arrays: "2 7 11 15"
@@ -230,12 +231,20 @@ EXAMPLE TEST CASE FORMAT:
 For Two Sum problem:
 - stdin: "4\\n2 7 11 15\\n9"
   (4 = array size, "2 7 11 15" = array, 9 = target)
-- expected_output: "0 1"
+- expectedOutput: "0 1"
 
 For Maximum Subarray:
 - stdin: "9\\n-2 1 -3 4 -1 2 1 -5 4"
   (9 = array size, followed by array elements)
-- expected_output: "6"
+- expectedOutput: "6"
+
+TEST CASE REQUIREMENTS:
+- Generate EXACTLY 10 test cases per problem
+- First 2 test cases: isHidden = false (public, shown to user)
+- Remaining 8 test cases: isHidden = true (private, hidden from user)
+- Public test cases should be simple/medium difficulty
+- Private test cases should include edge cases, large inputs, corner cases
+- Vary the test cases to cover different scenarios
 
 Return JSON array with this EXACT structure:
 [{
@@ -256,13 +265,53 @@ Return JSON array with this EXACT structure:
   "constraints": ["1 ≤ n ≤ 10^4", "constraint2"],
   "testCases": [
     {
-      "stdin": "Plain text input exactly as it appears in stdin",
-      "expectedOutput": "Expected output as plain text",
+      "stdin": "Test case 1 stdin (simple case)",
+      "expectedOutput": "Expected output 1",
       "isHidden": false
     },
     {
-      "stdin": "Another test case stdin",
-      "expectedOutput": "Expected output",
+      "stdin": "Test case 2 stdin (medium case)",
+      "expectedOutput": "Expected output 2",
+      "isHidden": false
+    },
+    {
+      "stdin": "Test case 3 stdin (edge case)",
+      "expectedOutput": "Expected output 3",
+      "isHidden": true
+    },
+    {
+      "stdin": "Test case 4 stdin (large input)",
+      "expectedOutput": "Expected output 4",
+      "isHidden": true
+    },
+    {
+      "stdin": "Test case 5 stdin (corner case)",
+      "expectedOutput": "Expected output 5",
+      "isHidden": true
+    },
+    {
+      "stdin": "Test case 6 stdin (negative numbers)",
+      "expectedOutput": "Expected output 6",
+      "isHidden": true
+    },
+    {
+      "stdin": "Test case 7 stdin (all same elements)",
+      "expectedOutput": "Expected output 7",
+      "isHidden": true
+    },
+    {
+      "stdin": "Test case 8 stdin (maximum constraints)",
+      "expectedOutput": "Expected output 8",
+      "isHidden": true
+    },
+    {
+      "stdin": "Test case 9 stdin (minimum constraints)",
+      "expectedOutput": "Expected output 9",
+      "isHidden": true
+    },
+    {
+      "stdin": "Test case 10 stdin (special pattern)",
+      "expectedOutput": "Expected output 10",
       "isHidden": true
     }
   ]
@@ -272,35 +321,57 @@ IMPORTANT:
 - stdin field must contain ONLY plain text, NO JSON
 - Use \\n for newlines in stdin
 - Use spaces to separate array elements
-- Include at least 3 test cases per problem (2 public, 1+ hidden)`;
+- MUST include EXACTLY 10 test cases per problem
+- First 2 test cases MUST have isHidden: false
+- Remaining 8 test cases MUST have isHidden: true`;
 
   try {
     const jsonResponse = await callGemini(prompt, {
       temperature: 0.9,
-      maxOutputTokens: 6144,
-      useCache: true,
+      maxOutputTokens: 8192,
+      useCache: false, // Don't cache to get fresh problems
       responseType: 'json'
     });
 
     const problems = JSON.parse(jsonResponse);
 
     // Format and validate problems
-    const formattedProblems = problems.slice(0, count).map((p, index) => ({
-      id: index + 1,
-      title: p.title || `${topics[0]} Problem ${index + 1}`,
-      difficulty: p.difficulty || difficulty,
-      topic: p.topic || topics[index % topics.length],
-      description: p.description || 'Problem description not available.',
-      input_format: p.input_format || 'Input format not specified',
-      output_format: p.output_format || 'Output format not specified',
-      examples: Array.isArray(p.examples) ? p.examples : [],
-      constraints: Array.isArray(p.constraints) ? p.constraints : [],
-      testCases: Array.isArray(p.testCases) && p.testCases.length >= 2 ? p.testCases : [
-        { stdin: '3\\n1 2 3', expectedOutput: '6', isHidden: false },
-        { stdin: '5\\n-1 -2 -3 -4 -5', expectedOutput: '-1', isHidden: true }
-      ]
-    }));
+    const formattedProblems = problems.slice(0, count).map((p, index) => {
+      // Ensure we have exactly 10 test cases
+      let testCases = Array.isArray(p.testCases) ? p.testCases : [];
+      
+      // If less than 10, generate additional ones
+      while (testCases.length < 10) {
+        const isPublic = testCases.length < 2;
+        testCases.push({
+          stdin: `${testCases.length + 1}\\n1 2 3\\n${testCases.length}`,
+          expectedOutput: `${testCases.length}`,
+          isHidden: !isPublic
+        });
+      }
 
+      // Take only first 10 and ensure proper isHidden flags
+      testCases = testCases.slice(0, 10).map((tc, idx) => ({
+        stdin: tc.stdin || `${idx + 1}\\n1 2 3\\n${idx}`,
+        expectedOutput: tc.expectedOutput || `${idx}`,
+        isHidden: idx >= 2 // First 2 public, rest private
+      }));
+
+      return {
+        id: index + 1,
+        title: p.title || `${topics[0]} Problem ${index + 1}`,
+        difficulty: p.difficulty || difficulty,
+        topic: p.topic || topics[index % topics.length],
+        description: p.description || 'Problem description not available.',
+        input_format: p.input_format || 'Input format not specified',
+        output_format: p.output_format || 'Output format not specified',
+        examples: Array.isArray(p.examples) ? p.examples.slice(0, 2) : [],
+        constraints: Array.isArray(p.constraints) ? p.constraints : [],
+        testCases: testCases
+      };
+    });
+
+    console.log(`[GEMINI] Generated ${formattedProblems.length} problems with 10 test cases each`);
     return formattedProblems;
 
   } catch (error) {
@@ -424,7 +495,7 @@ function createFallbackEvaluation(correct, total, percentage) {
 }
 
 /**
- * Fallback coding problems with stdin format
+ * Fallback coding problems with stdin format and 10 test cases (2 public, 8 private)
  */
 function generateFallbackCodingProblems(topics, difficulty, count) {
 
@@ -444,9 +515,18 @@ function generateFallbackCodingProblems(topics, difficulty, count) {
         ],
         constraints: ['2 ≤ n ≤ 10⁴', '-10⁹ ≤ nums[i] ≤ 10⁹'],
         testCases: [
+          // Public test cases (shown to user)
           { stdin: '4\n2 7 11 15\n9', expectedOutput: '0 1', isHidden: false },
-          { stdin: '3\n3 2 4\n6', expectedOutput: '1 2', isHidden: true },
-          { stdin: '2\n3 3\n6', expectedOutput: '0 1', isHidden: true }
+          { stdin: '3\n3 2 4\n6', expectedOutput: '1 2', isHidden: false },
+          // Private test cases (hidden from user)
+          { stdin: '2\n3 3\n6', expectedOutput: '0 1', isHidden: true },
+          { stdin: '5\n1 5 3 7 9\n10', expectedOutput: '1 3', isHidden: true },
+          { stdin: '6\n-1 -2 -3 -4 -5 -6\n-11', expectedOutput: '4 5', isHidden: true },
+          { stdin: '7\n0 4 3 0 1 2 5\n0', expectedOutput: '0 3', isHidden: true },
+          { stdin: '8\n10 20 30 40 50 60 70 80\n90', expectedOutput: '3 4', isHidden: true },
+          { stdin: '4\n1 1 1 1\n2', expectedOutput: '0 1', isHidden: true },
+          { stdin: '10\n5 5 5 5 5 5 5 5 5 5\n10', expectedOutput: '0 1', isHidden: true },
+          { stdin: '2\n-1 1\n0', expectedOutput: '0 1', isHidden: true }
         ]
       },
       {
@@ -463,9 +543,18 @@ function generateFallbackCodingProblems(topics, difficulty, count) {
         ],
         constraints: ['1 ≤ n ≤ 10⁵', '-10⁴ ≤ nums[i] ≤ 10⁴'],
         testCases: [
+          // Public test cases
           { stdin: '9\n-2 1 -3 4 -1 2 1 -5 4', expectedOutput: '6', isHidden: false },
-          { stdin: '1\n1', expectedOutput: '1', isHidden: true },
-          { stdin: '5\n-1 -2 -3 -4 -5', expectedOutput: '-1', isHidden: true }
+          { stdin: '1\n5', expectedOutput: '5', isHidden: false },
+          // Private test cases
+          { stdin: '1\n-1', expectedOutput: '-1', isHidden: true },
+          { stdin: '5\n-1 -2 -3 -4 -5', expectedOutput: '-1', isHidden: true },
+          { stdin: '5\n5 4 -1 7 8', expectedOutput: '23', isHidden: true },
+          { stdin: '6\n1 2 3 4 5 6', expectedOutput: '21', isHidden: true },
+          { stdin: '8\n-2 -3 4 -1 -2 1 5 -3', expectedOutput: '7', isHidden: true },
+          { stdin: '4\n1 -1 1 -1', expectedOutput: '1', isHidden: true },
+          { stdin: '10\n10 -5 10 -5 10 -5 10 -5 10 -5', expectedOutput: '30', isHidden: true },
+          { stdin: '3\n-10 5 -10', expectedOutput: '5', isHidden: true }
         ]
       },
       {
@@ -482,9 +571,18 @@ function generateFallbackCodingProblems(topics, difficulty, count) {
         ],
         constraints: ['1 ≤ n ≤ 10⁴'],
         testCases: [
+          // Public test cases
           { stdin: '3\n3 0 1', expectedOutput: '2', isHidden: false },
-          { stdin: '2\n0 1', expectedOutput: '2', isHidden: true },
-          { stdin: '9\n9 6 4 2 3 5 7 0 1', expectedOutput: '8', isHidden: true }
+          { stdin: '2\n0 1', expectedOutput: '2', isHidden: false },
+          // Private test cases
+          { stdin: '9\n9 6 4 2 3 5 7 0 1', expectedOutput: '8', isHidden: true },
+          { stdin: '1\n1', expectedOutput: '0', isHidden: true },
+          { stdin: '1\n0', expectedOutput: '1', isHidden: true },
+          { stdin: '5\n0 1 2 3 4', expectedOutput: '5', isHidden: true },
+          { stdin: '4\n4 3 2 1', expectedOutput: '0', isHidden: true },
+          { stdin: '7\n7 6 5 4 3 2 0', expectedOutput: '1', isHidden: true },
+          { stdin: '6\n1 2 3 4 5 6', expectedOutput: '0', isHidden: true },
+          { stdin: '8\n0 1 2 3 4 5 6 7', expectedOutput: '8', isHidden: true }
         ]
       }
     ],
@@ -503,9 +601,18 @@ function generateFallbackCodingProblems(topics, difficulty, count) {
         ],
         constraints: ['1 ≤ s.length ≤ 2 × 10⁵'],
         testCases: [
+          // Public test cases
           { stdin: 'A man, a plan, a canal: Panama', expectedOutput: 'true', isHidden: false },
-          { stdin: 'race a car', expectedOutput: 'false', isHidden: true },
-          { stdin: ' ', expectedOutput: 'true', isHidden: true }
+          { stdin: 'race a car', expectedOutput: 'false', isHidden: false },
+          // Private test cases
+          { stdin: ' ', expectedOutput: 'true', isHidden: true },
+          { stdin: 'a', expectedOutput: 'true', isHidden: true },
+          { stdin: 'ab', expectedOutput: 'false', isHidden: true },
+          { stdin: 'aba', expectedOutput: 'true', isHidden: true },
+          { stdin: '0P', expectedOutput: 'false', isHidden: true },
+          { stdin: 'A man a plan a canal Panama', expectedOutput: 'true', isHidden: true },
+          { stdin: 'Was it a car or a cat I saw', expectedOutput: 'true', isHidden: true },
+          { stdin: 'hello world', expectedOutput: 'false', isHidden: true }
         ]
       }
     ]
@@ -526,7 +633,7 @@ function generateFallbackCodingProblems(topics, difficulty, count) {
       output_format: template.output_format,
       examples: template.examples,
       constraints: template.constraints,
-      testCases: template.testCases
+      testCases: template.testCases // Already has 10 test cases (2 public, 8 private)
     });
   }
 
@@ -537,4 +644,113 @@ module.exports = {
   generateQuizQuestions,
   evaluateQuizAnswers,
   generateCodingProblems
+};
+
+
+/**
+ * Analyze coding performance using Gemini AI
+ * @param {Object} sessionData - Session data including attempts, questions, and user codes
+ * @returns {Promise<Object>} - Performance analysis with ratings and recommendations
+ */
+async function analyzeCodePerformance(sessionData) {
+  const {
+    sessionDuration,
+    totalAttempts,
+    questions,
+    attempts,
+    language,
+    userCodes,
+    successRate
+  } = sessionData;
+
+  const sessionMinutes = Math.round(sessionDuration / 60000);
+  const avgTimePerProblem = sessionMinutes / totalAttempts;
+
+  // Prepare code samples for analysis
+  const codeSamples = userCodes.map((code, index) => {
+    const attempt = attempts[index];
+    const question = questions.find(q => q.id === attempt?.questionId);
+    return {
+      questionTitle: question?.title || `Problem ${index + 1}`,
+      code: code,
+      results: attempt?.results || []
+    };
+  }).filter(sample => sample.code && sample.code.trim().length > 0);
+
+  const prompt = `You are an expert coding instructor analyzing a student's coding session performance.
+
+SESSION SUMMARY:
+- Programming Language: ${language}
+- Session Duration: ${sessionMinutes} minutes
+- Total Attempts: ${totalAttempts}
+- Success Rate: ${successRate.toFixed(1)}%
+- Average Time per Problem: ${avgTimePerProblem.toFixed(1)} minutes
+
+QUESTIONS ATTEMPTED:
+${questions.map((q, i) => `${i + 1}. ${q.title} (${q.difficulty} - ${q.topic})`).join('\n')}
+
+CODE SAMPLES:
+${codeSamples.map((sample, i) => `
+Problem ${i + 1}: ${sample.questionTitle}
+Code:
+\`\`\`${language.toLowerCase()}
+${sample.code}
+\`\`\`
+Test Results: ${sample.results.filter(r => r.status === "Passed").length}/${sample.results.length} passed
+`).join('\n')}
+
+Analyze this coding session and provide a comprehensive performance evaluation in the following JSON format:
+
+{
+  "overallRating": <number 1-10>,
+  "strengths": [<array of 2-4 specific strengths observed>],
+  "improvements": [<array of 2-4 specific areas for improvement>],
+  "codeQuality": {
+    "readability": <number 1-10>,
+    "efficiency": <number 1-10>,
+    "correctness": <number 1-10>
+  },
+  "recommendations": [<array of 3-5 actionable recommendations>],
+  "summary": "<2-3 sentence summary of overall performance>"
+}
+
+ANALYSIS GUIDELINES:
+1. Be specific and constructive in feedback
+2. Reference actual code patterns observed
+3. Consider the difficulty level and time taken
+4. Provide actionable recommendations
+5. Be encouraging but honest
+6. Focus on ${language}-specific best practices
+
+Return ONLY the JSON object, no markdown, no explanations.`;
+
+  try {
+    const jsonResponse = await callGemini(prompt, {
+      temperature: 0.7,
+      maxOutputTokens: 2000
+    });
+
+    // Parse and validate the response
+    const analysis = JSON.parse(jsonResponse);
+
+    // Ensure all required fields exist
+    if (!analysis.overallRating || !analysis.strengths || !analysis.improvements || 
+        !analysis.codeQuality || !analysis.recommendations || !analysis.summary) {
+      throw new Error('Invalid analysis structure from Gemini');
+    }
+
+    console.log('[GEMINI] Performance analysis generated successfully');
+    return analysis;
+
+  } catch (error) {
+    console.error('[GEMINI] Performance analysis error:', error.message);
+    throw error;
+  }
+}
+
+module.exports = {
+  generateQuizQuestions,
+  evaluateQuizAnswers,
+  generateCodingProblems,
+  analyzeCodePerformance
 };

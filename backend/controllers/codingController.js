@@ -1,12 +1,10 @@
 /**
- * Coding Controller - TESTING MODE
- * Handles coding questions generation and code execution using static data
- * ❌ Removed: Gemini AI dependencies
- * ✅ Added: Static problem pools and mock execution
+ * Coding Controller
+ * Handles coding questions generation using Gemini AI
+ * Generates 10 test cases: 2 public (shown), 8 private (hidden)
  */
 
-// ❌ TESTING MODE: Removed AI dependency
-// const { callGemini } = require('../services/geminiClient');
+const { generateCodingProblems } = require('../services/geminiService');
 
 // ============================================
 // STATIC CODING PROBLEMS FOR TESTING MODE
@@ -288,7 +286,9 @@ const generateMockPerformanceAnalysis = (sessionDuration, totalAttempts, success
   };
 };
 
-// @desc    Generate coding questions using static data - TESTING MODE
+// @desc    Generate coding questions using Gemini AI
+// @route   POST /api/coding/generate-questions
+// @access  Public
 const generateCodingQuestions = async (req, res) => {
   try {
     const { topic, difficulty, language, count } = req.body;
@@ -297,16 +297,88 @@ const generateCodingQuestions = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required: topic, difficulty, language, count' });
     }
 
-    // ✅ TESTING MODE: Use static problem generation
-    const questions = generateStaticCodingProblems(topic, difficulty, language, count);
+    console.log(`[CODING] Generating ${count} questions for ${topic} (${difficulty}) in ${language}`);
 
-    return res.json({ questions });
+    try {
+      // Call Gemini AI to generate coding problems
+      const problems = await generateCodingProblems([topic], difficulty, parseInt(count));
+
+      // Ensure each problem has exactly 10 test cases (2 public, 8 private)
+      const questionsWithTestCases = problems.map((problem, index) => {
+        // Get existing test cases or create defaults
+        let testCases = problem.testCases || [];
+        
+        // Ensure we have at least 10 test cases
+        while (testCases.length < 10) {
+          // Generate additional test cases based on the problem
+          const isPublic = testCases.length < 2; // First 2 are public
+          testCases.push({
+            stdin: generateDefaultStdin(problem, testCases.length),
+            expectedOutput: generateDefaultOutput(problem, testCases.length),
+            isHidden: !isPublic
+          });
+        }
+
+        // Mark first 2 as public (isHidden: false), rest as private (isHidden: true)
+        testCases = testCases.slice(0, 10).map((tc, idx) => ({
+          ...tc,
+          isHidden: idx >= 2 // First 2 are public (false), rest are private (true)
+        }));
+
+        return {
+          id: index + 1,
+          title: problem.title,
+          description: problem.description,
+          input_format: problem.input_format,
+          output_format: problem.output_format,
+          constraints: problem.constraints || [],
+          examples: problem.examples || [],
+          starterCode: getStarterCodeTemplate(language, 'solution', 'params'),
+          testCases: testCases
+        };
+      });
+
+      console.log(`[CODING] Successfully generated ${questionsWithTestCases.length} questions with 10 test cases each`);
+      return res.json({ questions: questionsWithTestCases });
+
+    } catch (aiError) {
+      console.error('[CODING] Gemini AI generation failed:', aiError.message);
+      console.log('[CODING] Falling back to static problems');
+      
+      // Fallback to static problems if AI fails
+      const questions = generateStaticCodingProblems(topic, difficulty, language, count);
+      return res.json({ questions });
+    }
 
   } catch (error) {
     console.error('Error generating coding questions:', error);
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
+
+// Helper function to generate default stdin for additional test cases
+function generateDefaultStdin(problem, index) {
+  // Generate varied test cases based on problem type
+  const baseInputs = [
+    '5\n1 2 3 4 5\n10',
+    '3\n-1 0 1\n0',
+    '7\n10 20 30 40 50 60 70\n100',
+    '4\n5 5 5 5\n10',
+    '6\n-5 -4 -3 -2 -1 0\n-5',
+    '8\n100 200 300 400 500 600 700 800\n900',
+    '2\n1 1\n2',
+    '10\n1 1 1 1 1 1 1 1 1 1\n5'
+  ];
+  
+  return baseInputs[index % baseInputs.length];
+}
+
+// Helper function to generate default expected output
+function generateDefaultOutput(problem, index) {
+  // Generate varied outputs
+  const baseOutputs = ['0 1', '1 2', '-1', '0', '5', '10', 'true', 'false'];
+  return baseOutputs[index % baseOutputs.length];
+}
 
 // @desc    Execute code submission using mock execution - TESTING MODE
 const executeCodingSubmission = async (req, res) => {
@@ -471,7 +543,7 @@ function generateFallbackQuestions(topic, difficulty, language, count) {
   return problems;
 }
 
-// @desc    Analyze coding performance using mock analysis - TESTING MODE
+// @desc    Analyze coding performance using Gemini AI
 const analyzePerformance = async (req, res) => {
   try {
     const {
@@ -494,12 +566,33 @@ const analyzePerformance = async (req, res) => {
     );
     const successRate = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
 
-    // ✅ TESTING MODE: Use mock analysis with realistic delay
-    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s delay
+    console.log(`[PERFORMANCE] Analyzing session: ${totalAttempts} attempts, ${successRate.toFixed(1)}% success rate`);
 
-    const analysis = generateMockPerformanceAnalysis(sessionDuration, totalAttempts, successRate, language);
+    try {
+      // Call Gemini AI for performance analysis
+      const { analyzeCodePerformance } = require('../services/geminiService');
+      
+      const analysis = await analyzeCodePerformance({
+        sessionDuration,
+        totalAttempts,
+        questions,
+        attempts,
+        language,
+        userCodes,
+        successRate
+      });
 
-    return res.json({ analysis });
+      console.log(`[PERFORMANCE] Gemini analysis completed successfully`);
+      return res.json({ analysis });
+
+    } catch (aiError) {
+      console.error('[PERFORMANCE] Gemini AI analysis failed:', aiError.message);
+      console.log('[PERFORMANCE] Falling back to mock analysis');
+      
+      // Fallback to mock analysis if AI fails
+      const analysis = generateMockPerformanceAnalysis(sessionDuration, totalAttempts, successRate, language);
+      return res.json({ analysis });
+    }
 
   } catch (error) {
     console.error('Error analyzing performance:', error);

@@ -75,6 +75,7 @@ interface TestResult {
   passed: boolean;
   error: string | null;
   executionTime: number;
+  isHidden?: boolean;
 }
 
 interface ExecutionResponse {
@@ -397,37 +398,6 @@ const GeminiCodeArena = () => {
 
   // Fullscreen management
   useEffect(() => {
-    const enterFullscreen = async () => {
-      try {
-        if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
-        }
-        setIsFullscreen(true);
-        setShowFullscreenNotification(true);
-        // Hide notification after 3 seconds
-        setTimeout(() => setShowFullscreenNotification(false), 3000);
-
-        // Hide the main navbar by adding a CSS class to body
-        document.body.classList.add('fullscreen-coding-mode');
-
-        // Also try to hide navbar by targeting common navbar selectors
-        const navbar = document.querySelector('nav') ||
-          document.querySelector('[role="navigation"]') ||
-          document.querySelector('.navbar') ||
-          document.querySelector('header');
-        if (navbar) {
-          (navbar as HTMLElement).style.display = 'none';
-        }
-
-      } catch (error) {
-        console.log("Fullscreen not supported or denied");
-        setIsFullscreen(false);
-        // If fullscreen fails, go back to permission page and show error
-        setView("fullscreen-permission");
-        setFullscreenError("Fullscreen access was denied. Please allow fullscreen access to continue with the coding session.");
-      }
-    };
-
     const exitFullscreen = async () => {
       try {
         if (document.fullscreenElement && document.exitFullscreen) {
@@ -453,18 +423,31 @@ const GeminiCodeArena = () => {
       }
     };
 
-    // Enter fullscreen when entering coding view
-    if (view === "coding" && !isFullscreen) {
-      enterFullscreen();
-    } else if (isFullscreen && (view as ViewType) !== "coding") {
-      // Exit fullscreen when leaving coding view
+    // Show notification when entering coding view in fullscreen
+    if (view === "coding" && isFullscreen) {
+      setShowFullscreenNotification(true);
+      setTimeout(() => setShowFullscreenNotification(false), 3000);
+      
+      // Hide the main navbar
+      document.body.classList.add('fullscreen-coding-mode');
+      const navbar = document.querySelector('nav') ||
+        document.querySelector('[role="navigation"]') ||
+        document.querySelector('.navbar') ||
+        document.querySelector('header');
+      if (navbar) {
+        (navbar as HTMLElement).style.display = 'none';
+      }
+    }
+
+    // Exit fullscreen when leaving coding view
+    if (isFullscreen && (view as ViewType) !== "coding") {
       exitFullscreen();
     }
 
     return () => {
-      // Don't add fullscreen change listener here to avoid conflicts
+      // Cleanup
     };
-  }, [view]);
+  }, [view, isFullscreen]);
 
   // Separate effect for handling fullscreen changes (ESC key)
   useEffect(() => {
@@ -473,7 +456,7 @@ const GeminiCodeArena = () => {
 
       // Only handle ESC key exits (when user manually exits fullscreen while in coding view)
       if (!isCurrentlyFullscreen && view === "coding" && isFullscreen) {
-        console.log("User pressed ESC - exiting session");
+        console.log("User pressed ESC - exiting session automatically");
         setIsFullscreen(false);
 
         // Restore the main navbar when exiting via ESC
@@ -486,8 +469,14 @@ const GeminiCodeArena = () => {
           (navbar as HTMLElement).style.display = '';
         }
 
+        // Automatically end session and return to setup
         setView("setup");
         setQuestions([]);
+        setResults(null);
+        setTestResults(null);
+        setCustomInput("");
+        setCurrentQIndex(0);
+        setUserCode("");
       } else if (isCurrentlyFullscreen && view === "coding") {
         // Successfully entered fullscreen
         setIsFullscreen(true);
@@ -605,16 +594,14 @@ const GeminiCodeArena = () => {
       return;
     }
 
-    // First show fullscreen permission page
-    setView("fullscreen-permission");
-  };
-
-  const proceedWithFullscreen = async () => {
     setLoading(true);
-    setFullscreenError(null); // Clear any previous error
+    setFullscreenError(null);
+
+    // Clear previously saved codes when starting new session
+    clearSavedCodes();
 
     try {
-      // If "Previous" mode is selected, ONLY load from history - no fallback to new generation
+      // If "Previous" mode is selected, ONLY load from history
       if (questionMode === "Previous") {
         const history = getQuestionHistory();
         const matchingHistory = history.find(h =>
@@ -631,21 +618,21 @@ const GeminiCodeArena = () => {
           setUserCode(initialStarterCode);
           setCurrentQIndex(0);
           setResults(null);
-          setView("coding");
-          // Reset session data
-          setSessionData({ startTime: Date.now(), attempts: [] });
+          setTestResults(null);
+          
+          // Show fullscreen permission page after loading questions
+          setView("fullscreen-permission");
           setLoading(false);
           return;
         } else {
-          // No matching history found - show error and return to setup
-          setFullscreenError(`No previous questions found for ${selectedTopic} (${difficulty}, ${language}, ${count} problems). Please select "New" mode to generate fresh questions or try different settings.`);
-          setView("fullscreen-permission");
+          // No matching history found
+          alert(`No previous questions found for ${selectedTopic} (${difficulty}, ${language}, ${count} problems). Please select "New" mode to generate fresh questions or try different settings.`);
           setLoading(false);
           return;
         }
       }
 
-      // "New" mode - always generate fresh questions
+      // "New" mode - generate fresh questions
       console.log("Generating new questions via backend API:", { selectedTopic, difficulty, language, count });
 
       // Call backend API to generate questions
@@ -671,9 +658,10 @@ const GeminiCodeArena = () => {
         setUserCode(initialStarterCode);
         setCurrentQIndex(0);
         setResults(null);
-        setView("coding");
-        // Reset session data
-        setSessionData({ startTime: Date.now(), attempts: [] });
+        setTestResults(null);
+        
+        // Show fullscreen permission page after questions are generated
+        setView("fullscreen-permission");
       } else {
         throw new Error("No questions received from backend");
       }
@@ -682,13 +670,38 @@ const GeminiCodeArena = () => {
       console.error("Failed to generate questions:", error);
       const errorMessage = error.response?.data?.message || error.message || "Unknown error occurred";
       alert(`Failed to generate questions: ${errorMessage}`);
-      setView("setup");
     } finally {
       setLoading(false);
     }
   };
+
+  const proceedWithFullscreen = async () => {
+    // Questions are already loaded at this point
+    // Just request fullscreen and enter coding mode
+    
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+        console.log("✓ Fullscreen access granted - entering coding mode");
+        
+        // Enter coding view
+        setView("coding");
+        // Reset session data
+        setSessionData({ startTime: Date.now(), attempts: [] });
+      }
+    } catch (fullscreenError) {
+      console.error("Fullscreen request failed:", fullscreenError);
+      setFullscreenError("Fullscreen access was denied. Please click 'Allow' when your browser asks for fullscreen permission, then try again.");
+    }
+  };
   // Run Code - Execute code with public test cases using Judge0 API
   const handleRunCode = async () => {
+    // Save current code
+    if (questions[currentQIndex]) {
+      saveCodeForQuestion(questions[currentQIndex].id, userCode);
+    }
+
     // Disable Run button and set loading state
     setIsRunning(true);
     setTestResults(null);
@@ -798,6 +811,11 @@ const GeminiCodeArena = () => {
 
   // Submit Code - Submit code with all test cases using Judge0 API
   const handleSubmitCode = async () => {
+    // Save current code
+    if (questions[currentQIndex]) {
+      saveCodeForQuestion(questions[currentQIndex].id, userCode);
+    }
+
     // Disable Submit button and set loading state
     setIsSubmitting(true);
     
@@ -823,7 +841,26 @@ const GeminiCodeArena = () => {
       if (response.data.success) {
         // Store the submission results to display in UI
         setTestResults(response.data);
-        // Results will be displayed in the UI, no need for alert
+        
+        // Track this attempt for performance analysis
+        const executionResults: ExecutionResult[] = response.data.results.map((result: TestResult, index: number) => ({
+          testCaseIndex: index,
+          status: result.passed ? "Passed" : (result.error ? "Error" : "Failed"),
+          actualOutput: result.actualOutput,
+          expectedOutput: result.expectedOutput,
+          errorDetail: result.error,
+          isHidden: result.isHidden || false
+        }));
+        
+        setSessionData(prev => ({
+          ...prev,
+          attempts: [...prev.attempts, {
+            questionId: currentQuestion.id,
+            code: userCode,
+            results: executionResults,
+            timestamp: Date.now()
+          }]
+        }));
       }
       
     } catch (error) {
@@ -978,9 +1015,45 @@ const GeminiCodeArena = () => {
     return '';
   };
 
+  // Save code for current question to localStorage
+  const saveCodeForQuestion = (questionId: number, code: string) => {
+    try {
+      const savedCodes = JSON.parse(localStorage.getItem('codeArenaSavedCodes') || '{}');
+      savedCodes[questionId] = code;
+      localStorage.setItem('codeArenaSavedCodes', JSON.stringify(savedCodes));
+    } catch (error) {
+      console.error('Failed to save code:', error);
+    }
+  };
+
+  // Load saved code for a question
+  const loadCodeForQuestion = (questionId: number): string => {
+    try {
+      const savedCodes = JSON.parse(localStorage.getItem('codeArenaSavedCodes') || '{}');
+      return savedCodes[questionId] || '';
+    } catch (error) {
+      console.error('Failed to load code:', error);
+      return '';
+    }
+  };
+
+  // Clear all saved codes (call when starting new session)
+  const clearSavedCodes = () => {
+    try {
+      localStorage.removeItem('codeArenaSavedCodes');
+    } catch (error) {
+      console.error('Failed to clear saved codes:', error);
+    }
+  };
+
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
     setShowLanguageDropdown(false);
+
+    // Save current code before changing language
+    if (questions[currentQIndex]) {
+      saveCodeForQuestion(questions[currentQIndex].id, userCode);
+    }
 
     // Update starter code based on the new language and current question
     const currentQuestion = questions[currentQIndex];
@@ -993,11 +1066,21 @@ const GeminiCodeArena = () => {
   const changeQuestion = (delta: number) => {
     const newIndex = currentQIndex + delta;
     if (newIndex >= 0 && newIndex < questions.length) {
+      // Save current code before switching
+      if (questions[currentQIndex]) {
+        saveCodeForQuestion(questions[currentQIndex].id, userCode);
+      }
+
       setCurrentQIndex(newIndex);
-      // Generate starter code for the new question in the current language
+      
+      // Load saved code for the new question
       const newQuestion = questions[newIndex];
-      const newStarterCode = generateStarterCode(language, newQuestion?.title || "");
-      setUserCode(newStarterCode);
+      const savedCode = loadCodeForQuestion(newQuestion.id);
+      
+      // Use saved code if available, otherwise use starter code
+      const codeToLoad = savedCode || generateStarterCode(language, newQuestion?.title || "");
+      setUserCode(codeToLoad);
+      
       setResults(null);
       // Clear test results when changing questions
       setTestResults(null);
@@ -1172,7 +1255,7 @@ const GeminiCodeArena = () => {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Building Environment...
+                  Generating Questions...
                 </>
               ) : !selectedTopic ? (
                 <>
@@ -1263,7 +1346,7 @@ const GeminiCodeArena = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setQuestions(entry.questions);
                         setSelectedTopic(entry.topic);
                         setDifficulty(entry.difficulty);
@@ -1274,7 +1357,26 @@ const GeminiCodeArena = () => {
                         setUserCode(historyStarterCode);
                         setCurrentQIndex(0);
                         setResults(null);
-                        setView("coding");
+                        setTestResults(null);
+                        
+                        // Request fullscreen before entering coding mode
+                        try {
+                          if (document.documentElement.requestFullscreen) {
+                            await document.documentElement.requestFullscreen();
+                            setIsFullscreen(true);
+                            console.log("✓ Fullscreen access granted - entering coding mode from history");
+                            setView("coding");
+                            // Reset session data
+                            setSessionData({ startTime: Date.now(), attempts: [] });
+                          }
+                        } catch (fullscreenError) {
+                          console.error("Fullscreen request failed:", fullscreenError);
+                          // If fullscreen fails, still allow entering coding mode
+                          alert("Fullscreen access was denied. You can still code, but for the best experience, please allow fullscreen access.");
+                          setView("coding");
+                          // Reset session data
+                          setSessionData({ startTime: Date.now(), attempts: [] });
+                        }
                       }}
                       className="px-4 py-2 bg-[#2563EB] hover:bg-[#4d51e0] text-white rounded-lg text-sm font-medium transition-colors"
                     >
@@ -1375,6 +1477,9 @@ const GeminiCodeArena = () => {
                 onClick={() => {
                   setView("setup");
                   setFullscreenError(null);
+                  // Clear questions when going back
+                  setQuestions([]);
+                  setUserCode("");
                 }}
                 className="flex-1 px-6 py-3 rounded-xl font-medium text-slate-400 border border-slate-700 hover:border-slate-600 hover:text-slate-300 transition-all"
               >
@@ -1382,23 +1487,10 @@ const GeminiCodeArena = () => {
               </button>
               <button
                 onClick={proceedWithFullscreen}
-                disabled={loading}
-                className={`flex-1 px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg ${loading
-                  ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-                  : "bg-[#2563EB] hover:bg-[#4d51e0] text-white shadow-blue-500/30"
-                  }`}
+                className="flex-1 px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg bg-[#2563EB] hover:bg-[#4d51e0] text-white shadow-blue-500/30"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    Enter Fullscreen
-                    <ChevronRight size={20} />
-                  </>
-                )}
+                Enter Fullscreen
+                <ChevronRight size={20} />
               </button>
             </div>
           </div>
@@ -1425,55 +1517,29 @@ const GeminiCodeArena = () => {
         )}
 
         {/* Header - Bristom Style */}
-        <div className="h-16 border-b border-slate-800 bg-[#0A0E14] flex items-center justify-between px-6 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                <Cpu className="w-6 h-6 text-[#2563EB]" />
-              </div>
-              <span className="font-bold text-xl tracking-tight">Code<span className="text-[#2563EB]">Arena</span></span>
+        <div className="h-16 border-b border-slate-800 bg-[#0A0E14] flex items-center px-6 shrink-0 relative z-[200]">
+          {/* Left Section - Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+              <Cpu className="w-6 h-6 text-[#2563EB]" />
             </div>
-            
-            {/* Language Selector */}
-            <div className="relative language-dropdown">
-              <button
-                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                className="flex items-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium transition-all"
-              >
-                <Code2 className="w-4 h-4" />
-                <span>{language}</span>
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              
-              {showLanguageDropdown && (
-                <div className="absolute top-full left-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 min-w-[160px] max-h-[400px] overflow-y-auto">
-                  {(["JavaScript", "Python", "Java", "C++", "C", "C#", "Ruby", "Go", "Rust", "PHP", "TypeScript", "Kotlin", "R"] as Language[]).map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => handleLanguageChange(lang)}
-                      className={`w-full text-left px-4 py-2.5 transition-colors ${
-                        language === lang
-                          ? "bg-[#2563EB] text-white"
-                          : "text-slate-300 hover:bg-slate-700"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <span className="font-bold text-xl tracking-tight">Code<span className="text-[#2563EB]">Arena</span></span>
           </div>
 
-          {/* Central Timer Pill */}
-          {timeLimit !== null && (
-            <div className="flex items-center gap-2 bg-[#2563EB] text-white px-5 py-2 rounded-xl shadow-lg shadow-blue-500/20">
-              <Timer className="w-5 h-5" />
-              <span className="font-bold text-lg font-mono">{formatTime(timeLeft)}</span>
-            </div>
-          )}
+          {/* Center Section - Timer (Absolutely Centered) */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-6">
+            {/* Timer Pill */}
+            {timeLimit !== null && (
+              <div className="flex items-center gap-2 bg-[#2563EB] text-white px-5 py-2 rounded-xl shadow-lg shadow-blue-500/20">
+                <Timer className="w-5 h-5" />
+                <span className="font-bold text-lg font-mono">{formatTime(timeLeft)}</span>
+              </div>
+            )}
+          </div>
+          
 
-          <div className="flex items-center gap-4">
+          {/* Right Section - End Session */}
+          <div className="ml-auto">
             <button
               onClick={endSessionAndAnalyze}
               disabled={isSubmitting || analyzingPerformance}
@@ -1621,6 +1687,43 @@ const GeminiCodeArena = () => {
                 }} 
                 className="border-r border-slate-800 flex flex-col overflow-hidden"
               >
+                {/* Editor Header with Language Selector */}
+                <div className="h-12 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-4">
+                  <div className="flex items-center gap-2 text-slate-400 text-sm">
+                    <Code2 className="w-4 h-4" />
+                    <span className="font-medium">Code Editor</span>
+                  </div>
+                  
+                  {/* Language Selector */}
+                  <div className="relative language-dropdown">
+                    <button
+                      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                      className="flex items-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg font-medium transition-all text-sm"
+                    >
+                      <span>{language}</span>
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                    
+                    {showLanguageDropdown && (
+                      <div className="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 min-w-[160px] max-h-[400px] overflow-y-auto">
+                        {(["JavaScript", "Python", "Java", "C++", "C", "C#", "Ruby", "Go", "Rust", "PHP", "TypeScript", "Kotlin", "R"] as Language[]).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => handleLanguageChange(lang)}
+                            className={`w-full text-left px-4 py-2.5 transition-colors ${
+                              language === lang
+                                ? "bg-[#2563EB] text-white"
+                                : "text-slate-300 hover:bg-slate-700"
+                            }`}
+                          >
+                            {lang}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Monaco Editor */}
                 <div className="flex-1 overflow-hidden">
                   <Editor
@@ -1789,6 +1892,9 @@ const GeminiCodeArena = () => {
                               )}
                               <span className="font-semibold text-sm text-slate-200">
                                 Test Case {index + 1}
+                                {result.isHidden && (
+                                  <span className="ml-2 text-xs text-slate-500">(Hidden)</span>
+                                )}
                               </span>
                             </div>
                             {result.executionTime && (
@@ -1798,26 +1904,40 @@ const GeminiCodeArena = () => {
                             )}
                           </div>
 
-                          {/* Expected Output */}
-                          <div className="mb-2">
-                            <div className="text-xs text-slate-500 mb-1">Expected:</div>
-                            <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto">
-                              {JSON.stringify(result.expectedOutput)}
-                            </pre>
-                          </div>
+                          {/* Show details only for public test cases */}
+                          {!result.isHidden ? (
+                            <>
+                              {/* Input */}
+                              <div className="mb-2">
+                                <div className="text-xs text-slate-500 mb-1">Input:</div>
+                                <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto whitespace-pre-wrap">
+                                  {typeof result.input === 'string' 
+                                    ? result.input 
+                                    : JSON.stringify(result.input, null, 2)}
+                                </pre>
+                              </div>
 
-                          {/* Actual Output */}
-                          <div className="mb-2">
-                            <div className="text-xs text-slate-500 mb-1">Actual:</div>
-                            <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto">
-                              {result.actualOutput || 'No output'}
-                            </pre>
-                          </div>
+                              {/* Output */}
+                              <div className="mb-2">
+                                <div className="text-xs text-slate-500 mb-1">Output:</div>
+                                <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto whitespace-pre-wrap">
+                                  {result.actualOutput || 'No output'}
+                                </pre>
+                              </div>
 
-                          {/* Error Message */}
-                          {result.error && (
-                            <div className="text-xs text-red-400 mt-2">
-                              {result.error}
+                              {/* Error Message */}
+                              {result.error && (
+                                <div className="text-xs text-red-400 mt-2">
+                                  {result.error}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            /* Hidden test case - only show status */
+                            <div className="text-sm text-slate-400 italic">
+                              {result.passed 
+                                ? "✓ Test case passed" 
+                                : "✗ Test case failed"}
                             </div>
                           )}
                         </div>
@@ -1956,6 +2076,43 @@ const GeminiCodeArena = () => {
 
                 {activeTab === 'editor' && (
                   <div className="flex flex-col h-full">
+                    {/* Editor Header with Language Selector */}
+                    <div className="h-12 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between px-4">
+                      <div className="flex items-center gap-2 text-slate-400 text-sm">
+                        <Code2 className="w-4 h-4" />
+                        <span className="font-medium">Code Editor</span>
+                      </div>
+                      
+                      {/* Language Selector */}
+                      <div className="relative language-dropdown">
+                        <button
+                          onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                          className="flex items-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg font-medium transition-all text-sm"
+                        >
+                          <span>{language}</span>
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        
+                        {showLanguageDropdown && (
+                          <div className="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 min-w-[160px] max-h-[400px] overflow-y-auto">
+                            {(["JavaScript", "Python", "Java", "C++", "C", "C#", "Ruby", "Go", "Rust", "PHP", "TypeScript", "Kotlin", "R"] as Language[]).map((lang) => (
+                              <button
+                                key={lang}
+                                onClick={() => handleLanguageChange(lang)}
+                                className={`w-full text-left px-4 py-2.5 transition-colors ${
+                                  language === lang
+                                    ? "bg-[#2563EB] text-white"
+                                    : "text-slate-300 hover:bg-slate-700"
+                                }`}
+                              >
+                                {lang}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Monaco Editor */}
                     <div className="flex-1 overflow-hidden">
                       <Editor
@@ -2087,6 +2244,9 @@ const GeminiCodeArena = () => {
                                   )}
                                   <span className="font-semibold text-sm text-slate-200">
                                     Test Case {index + 1}
+                                    {result.isHidden && (
+                                      <span className="ml-2 text-xs text-slate-500">(Hidden)</span>
+                                    )}
                                   </span>
                                 </div>
                                 {result.executionTime && (
@@ -2096,26 +2256,40 @@ const GeminiCodeArena = () => {
                                 )}
                               </div>
 
-                              {/* Expected Output */}
-                              <div className="mb-2">
-                                <div className="text-xs text-slate-500 mb-1">Expected:</div>
-                                <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto">
-                                  {JSON.stringify(result.expectedOutput)}
-                                </pre>
-                              </div>
+                              {/* Show details only for public test cases */}
+                              {!result.isHidden ? (
+                                <>
+                                  {/* Input */}
+                                  <div className="mb-2">
+                                    <div className="text-xs text-slate-500 mb-1">Input:</div>
+                                    <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto whitespace-pre-wrap">
+                                      {typeof result.input === 'string' 
+                                        ? result.input 
+                                        : JSON.stringify(result.input, null, 2)}
+                                    </pre>
+                                  </div>
 
-                              {/* Actual Output */}
-                              <div className="mb-2">
-                                <div className="text-xs text-slate-500 mb-1">Actual:</div>
-                                <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto">
-                                  {result.actualOutput || 'No output'}
-                                </pre>
-                              </div>
+                                  {/* Output */}
+                                  <div className="mb-2">
+                                    <div className="text-xs text-slate-500 mb-1">Output:</div>
+                                    <pre className="bg-slate-900 p-2 rounded text-xs text-slate-300 overflow-x-auto whitespace-pre-wrap">
+                                      {result.actualOutput || 'No output'}
+                                    </pre>
+                                  </div>
 
-                              {/* Error Message */}
-                              {result.error && (
-                                <div className="text-xs text-red-400 mt-2">
-                                  {result.error}
+                                  {/* Error Message */}
+                                  {result.error && (
+                                    <div className="text-xs text-red-400 mt-2">
+                                      {result.error}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                /* Hidden test case - only show status */
+                                <div className="text-sm text-slate-400 italic">
+                                  {result.passed 
+                                    ? "✓ Test case passed" 
+                                    : "✗ Test case failed"}
                                 </div>
                               )}
                             </div>

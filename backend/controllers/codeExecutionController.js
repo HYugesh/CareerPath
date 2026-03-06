@@ -162,7 +162,9 @@ const runCode = async (req, res) => {
           expectedOutput: expectedOutput,
           actualOutput: actualOutput || null,
           error: error,
-          executionTime: executionResult.time || 0
+          executionTime: executionResult.time || 0,
+          input: testCase.input || stdin,
+          isHidden: testCase.isHidden || false
         });
       } catch (error) {
         // Capture error message and mark test as failed
@@ -173,7 +175,9 @@ const runCode = async (req, res) => {
           expectedOutput: testCase.expectedOutput || testCase.expected_output || '',
           actualOutput: null,
           error: error.message || 'Test execution failed',
-          executionTime: 0
+          executionTime: 0,
+          input: testCase.input || '',
+          isHidden: testCase.isHidden || false
         });
       }
     }
@@ -296,6 +300,7 @@ const submitCode = async (req, res) => {
           actualOutput: actualOutput || null,
           error: error,
           executionTime: executionResult.time || 0,
+          input: testCase.input || stdin,
           isHidden: testCase.isHidden || false
         });
       } catch (error) {
@@ -308,6 +313,7 @@ const submitCode = async (req, res) => {
           actualOutput: null,
           error: error.message || 'Test execution failed',
           executionTime: 0,
+          input: testCase.input || '',
           isHidden: testCase.isHidden || false
         });
       }
