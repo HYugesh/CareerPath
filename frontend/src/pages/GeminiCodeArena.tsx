@@ -2317,415 +2317,256 @@ const GeminiCodeArena = () => {
   // --- Performance Analysis View ---
   if (view === "performance-analysis") {
     return (
-      <div className="min-h-screen text-slate-300 font-sans" style={{ background: 'linear-gradient(135deg, #0B0E14 0%, #1a1f2e 100%)' }}>
-        <div className="max-w-7xl mx-auto px-8 py-12">
-          {/* Header with Gradient */}
-          <div className="relative mb-12">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-3xl blur-3xl"></div>
-            <div className="relative bg-gradient-to-r from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur-xl opacity-50"></div>
-                    <div className="relative w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Award className="text-white" size={40} />
-                    </div>
-                  </div>
-                  <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">
-                      Performance Analysis
-                    </h1>
-                    <p className="text-slate-400">Comprehensive evaluation of your coding session</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setView("setup");
-                    setQuestions([]);
-                    setResults(null);
-                    setCustomResults(null);
-                    setPerformanceAnalysis(null);
-                    setSessionData({ startTime: Date.now(), attempts: [] });
-                    setShowCustomTests(false);
-                    setCustomTestCases([]);
-                  }}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-cyan-500/25 flex items-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  New Session
-                </button>
+      <div className="min-h-screen text-slate-300 font-sans p-20" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-cyan-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Award className="text-white" size={24} />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-[#22D3EE]">Performance Analysis</h1>
+                <p className="text-slate-400 text-sm">Your coding session analysis and recommendations</p>
               </div>
             </div>
+            <button
+              onClick={() => {
+                // Reset all states and go back to setup
+                setView("setup");
+                setQuestions([]);
+                setResults(null);
+                setCustomResults(null);
+                setPerformanceAnalysis(null);
+                setSessionData({ startTime: Date.now(), attempts: [] });
+                setShowCustomTests(false);
+                setCustomTestCases([]);
+              }}
+              className="px-6 py-3 bg-[#2563EB] hover:bg-[#4d51e0] text-white rounded-lg font-medium transition-colors"
+            >
+              New Session
+            </button>
           </div>
 
           {performanceAnalysis && (
-            <div className="space-y-8">
-              {/* Overall Performance Card with Visual Rating */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all"></div>
-                <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-xl">
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-                        <BarChart3 className="w-7 h-7 text-cyan-400" />
-                        Overall Performance Score
-                      </h2>
-                      <p className="text-slate-400 text-sm">Your aggregate performance across all problems</p>
+            <div className="grid gap-6">
+              {/* Overall Rating */}
+              <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-white">Overall Performance</h2>
+                  <div className="flex items-center gap-2">
+                    <div className={`text-3xl font-bold ${performanceAnalysis.overallRating >= 8 ? 'text-green-400' :
+                      performanceAnalysis.overallRating >= 6 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                      {performanceAnalysis.overallRating}/10
                     </div>
-                    <div className="text-right">
-                      <div className={`text-6xl font-black mb-1 ${
-                        performanceAnalysis.overallRating >= 8 ? 'bg-gradient-to-r from-green-400 to-emerald-400' :
-                        performanceAnalysis.overallRating >= 6 ? 'bg-gradient-to-r from-yellow-400 to-orange-400' :
-                        'bg-gradient-to-r from-red-400 to-pink-400'
-                      } bg-clip-text text-transparent`}>
-                        {performanceAnalysis.overallRating}
-                      </div>
-                      <div className="text-slate-400 text-sm font-medium">out of 10</div>
-                    </div>
-                  </div>
-                  
-                  {/* Visual Rating Bar */}
-                  <div className="mb-6">
-                    <div className="flex items-center gap-1 mb-2">
+                    <div className="flex">
                       {[...Array(10)].map((_, i) => (
                         <div
                           key={i}
-                          className={`flex-1 h-3 rounded-full transition-all duration-500 ${
-                            i < performanceAnalysis.overallRating
-                              ? performanceAnalysis.overallRating >= 8 ? 'bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50' :
-                                performanceAnalysis.overallRating >= 6 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50' :
-                                'bg-gradient-to-r from-red-400 to-pink-500 shadow-lg shadow-red-500/50'
-                              : 'bg-slate-700/50'
-                          }`}
+                          className={`w-2 h-6 mx-0.5 rounded ${i < performanceAnalysis.overallRating
+                            ? performanceAnalysis.overallRating >= 8 ? 'bg-green-400' :
+                              performanceAnalysis.overallRating >= 6 ? 'bg-yellow-400' : 'bg-red-400'
+                            : 'bg-slate-700'
+                            }`}
                         />
                       ))}
                     </div>
-                    <div className="flex justify-between text-xs text-slate-500 font-medium">
-                      <span>Needs Work</span>
-                      <span>Good</span>
-                      <span>Excellent</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-                    <p className="text-slate-200 leading-relaxed text-lg">{performanceAnalysis.summary}</p>
                   </div>
                 </div>
+                <p className="text-slate-300 leading-relaxed">{performanceAnalysis.summary}</p>
               </div>
 
-              {/* Code Quality Metrics - Enhanced */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all"></div>
-                <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-xl">
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                    <Code2 className="w-7 h-7 text-blue-400" />
-                    Code Quality Breakdown
-                  </h2>
-                  <div className="grid grid-cols-3 gap-8">
-                    {/* Readability */}
-                    <div className="relative group/metric">
-                      <div className="absolute inset-0 bg-blue-500/5 rounded-xl blur-xl group-hover/metric:bg-blue-500/10 transition-all"></div>
-                      <div className="relative bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 hover:border-blue-500/50 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Readability</div>
-                          <BookOpen className="w-5 h-5 text-blue-400" />
-                        </div>
-                        <div className="text-4xl font-black text-blue-400 mb-4">
-                          {performanceAnalysis.codeQuality.readability}<span className="text-2xl text-slate-600">/10</span>
-                        </div>
-                        <div className="relative w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
-                          <div
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-1000 shadow-lg shadow-blue-500/50"
-                            style={{ width: `${performanceAnalysis.codeQuality.readability * 10}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-slate-500 mt-3">How easy your code is to understand</p>
-                      </div>
+              {/* Code Quality Metrics */}
+              <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-white mb-4">Code Quality Metrics</h2>
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-400 mb-1">
+                      {performanceAnalysis.codeQuality.readability}/10
                     </div>
-
-                    {/* Efficiency */}
-                    <div className="relative group/metric">
-                      <div className="absolute inset-0 bg-cyan-500/5 rounded-xl blur-xl group-hover/metric:bg-cyan-500/10 transition-all"></div>
-                      <div className="relative bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 hover:border-cyan-500/50 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Efficiency</div>
-                          <Zap className="w-5 h-5 text-cyan-400" />
-                        </div>
-                        <div className="text-4xl font-black text-cyan-400 mb-4">
-                          {performanceAnalysis.codeQuality.efficiency}<span className="text-2xl text-slate-600">/10</span>
-                        </div>
-                        <div className="relative w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
-                          <div
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full transition-all duration-1000 shadow-lg shadow-cyan-500/50"
-                            style={{ width: `${performanceAnalysis.codeQuality.efficiency * 10}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-slate-500 mt-3">Time & space complexity optimization</p>
-                      </div>
+                    <div className="text-sm text-slate-400">Readability</div>
+                    <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-blue-400 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${performanceAnalysis.codeQuality.readability * 10}%` }}
+                      />
                     </div>
-
-                    {/* Correctness */}
-                    <div className="relative group/metric">
-                      <div className="absolute inset-0 bg-green-500/5 rounded-xl blur-xl group-hover/metric:bg-green-500/10 transition-all"></div>
-                      <div className="relative bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 hover:border-green-500/50 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Correctness</div>
-                          <CheckCircle2 className="w-5 h-5 text-green-400" />
-                        </div>
-                        <div className="text-4xl font-black text-green-400 mb-4">
-                          {performanceAnalysis.codeQuality.correctness}<span className="text-2xl text-slate-600">/10</span>
-                        </div>
-                        <div className="relative w-full bg-slate-700/50 rounded-full h-3 overflow-hidden">
-                          <div
-                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-1000 shadow-lg shadow-green-500/50"
-                            style={{ width: `${performanceAnalysis.codeQuality.correctness * 10}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-slate-500 mt-3">Accuracy of your solutions</p>
-                      </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-cyan-400 mb-1">
+                      {performanceAnalysis.codeQuality.efficiency}/10
+                    </div>
+                    <div className="text-sm text-slate-400">Efficiency</div>
+                    <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-cyan-400 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${performanceAnalysis.codeQuality.efficiency * 10}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-400 mb-1">
+                      {performanceAnalysis.codeQuality.correctness}/10
+                    </div>
+                    <div className="text-sm text-slate-400">Correctness</div>
+                    <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-green-400 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${performanceAnalysis.codeQuality.correctness * 10}%` }}
+                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Per-Question Analysis - Enhanced */}
+              {/* Per-Question Analysis */}
               {performanceAnalysis.questionAnalysis && performanceAnalysis.questionAnalysis.length > 0 && (
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all"></div>
-                  <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-xl">
-                    <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                      <Terminal className="w-7 h-7 text-purple-400" />
-                      Detailed Question Analysis
-                    </h2>
-                    <div className="space-y-6">
-                      {performanceAnalysis.questionAnalysis.map((qa, index) => (
-                        <div key={qa.questionId} className="relative group/question">
-                          <div className="absolute inset-0 bg-gradient-to-r from-slate-700/5 to-slate-600/5 rounded-xl blur-xl group-hover/question:from-slate-700/10 group-hover/question:to-slate-600/10 transition-all"></div>
-                          <div className="relative bg-slate-800/50 border border-slate-700/50 rounded-xl overflow-hidden hover:border-slate-600/50 transition-all">
-                            {/* Question Header with Rating Badge */}
-                            <div className="bg-gradient-to-r from-slate-800/80 to-slate-700/80 px-6 py-4 border-b border-slate-700/50">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                                    {index + 1}
-                                  </div>
-                                  <div>
-                                    <h3 className="text-xl font-bold text-white mb-1">{qa.questionTitle}</h3>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs text-slate-400">Individual Performance</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-lg ${
-                                    qa.rating >= 8 ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border border-green-500/30' :
-                                    qa.rating >= 6 ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border border-yellow-500/30' :
-                                    'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 border border-red-500/30'
-                                  }`}>
-                                    {qa.rating >= 8 ? <CheckCircle2 className="w-5 h-5" /> :
-                                     qa.rating >= 6 ? <AlertCircle className="w-5 h-5" /> :
-                                     <XCircle className="w-5 h-5" />}
-                                    {qa.rating}/10
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="p-6 space-y-5">
-                              {/* Your Approach */}
-                              <div className="relative">
-                                <div className="absolute -left-3 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></div>
-                                <div className="pl-4">
-                                  <h4 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                                    <Code2 className="w-4 h-4" />
-                                    Your Approach
-                                  </h4>
-                                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
-                                    <p className="text-slate-300 leading-relaxed">{qa.userApproach}</p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Better Approaches */}
-                              {qa.betterApproaches && qa.betterApproaches.length > 0 && (
-                                <div className="relative">
-                                  <div className="absolute -left-3 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-teal-500 rounded-full"></div>
-                                  <div className="pl-4">
-                                    <h4 className="text-sm font-bold text-cyan-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                                      <Sparkles className="w-4 h-4" />
-                                      Recommended Approaches
-                                    </h4>
-                                    <div className="space-y-3">
-                                      {qa.betterApproaches.map((approach, i) => (
-                                        <div key={i} className="bg-gradient-to-r from-cyan-500/5 to-teal-500/5 border border-cyan-500/20 rounded-lg p-4 hover:border-cyan-500/40 transition-all">
-                                          <div className="flex items-start gap-3">
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-lg">
-                                              {i + 1}
-                                            </div>
-                                            <p className="text-slate-300 leading-relaxed flex-1">{approach}</p>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Feedback */}
-                              <div className="relative">
-                                <div className="absolute -left-3 top-0 bottom-0 w-1 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
-                                <div className="pl-4">
-                                  <h4 className="text-sm font-bold text-green-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Expert Feedback
-                                  </h4>
-                                  <div className="bg-gradient-to-r from-green-500/5 to-emerald-500/5 border border-green-500/20 rounded-lg p-4">
-                                    <p className="text-slate-300 leading-relaxed">{qa.feedback}</p>
-                                  </div>
-                                </div>
+                <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
+                  <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <Code2 className="w-5 h-5" />
+                    Question-by-Question Analysis
+                  </h2>
+                  <div className="space-y-6">
+                    {performanceAnalysis.questionAnalysis.map((qa, index) => (
+                      <div key={qa.questionId} className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+                        {/* Question Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-lg font-bold text-white">
+                                {index + 1}. {qa.questionTitle}
+                              </span>
+                              <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                qa.rating >= 8 ? 'bg-green-500/20 text-green-400' :
+                                qa.rating >= 6 ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-red-500/20 text-red-400'
+                              }`}>
+                                {qa.rating}/10
                               </div>
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              <div className="grid grid-cols-2 gap-8">
-                {/* Strengths */}
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-green-500/10 rounded-2xl blur-2xl group-hover:blur-3xl transition-all"></div>
-                  <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
-                        <CheckCircle2 className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                        Your Strengths
-                      </span>
-                    </h2>
-                    <ul className="space-y-3">
-                      {performanceAnalysis.strengths.map((strength, i) => (
-                        <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-green-500/5 border border-green-500/20 hover:border-green-500/40 transition-all">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shrink-0 shadow-lg">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                          </div>
-                          <span className="text-slate-300 leading-relaxed">{strength}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                        {/* Your Approach */}
+                        <div className="mb-4">
+                          <h4 className="text-sm font-semibold text-blue-400 mb-2">Your Approach:</h4>
+                          <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg">
+                            {qa.userApproach}
+                          </p>
+                        </div>
 
-                {/* Areas for Improvement */}
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-yellow-500/10 rounded-2xl blur-2xl group-hover:blur-3xl transition-all"></div>
-                  <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
-                    <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg">
-                        <AlertCircle className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                        Growth Areas
-                      </span>
-                    </h2>
-                    <ul className="space-y-3">
-                      {performanceAnalysis.improvements.map((improvement, i) => (
-                        <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 hover:border-yellow-500/40 transition-all">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shrink-0 shadow-lg">
-                            <Zap className="w-3.5 h-3.5 text-white" />
+                        {/* Better Approaches */}
+                        {qa.betterApproaches && qa.betterApproaches.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-cyan-400 mb-2">Better Approaches:</h4>
+                            <ul className="space-y-2">
+                              {qa.betterApproaches.map((approach, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg">
+                                  <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                                  <span>{approach}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                          <span className="text-slate-300 leading-relaxed">{improvement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
+                        )}
 
-              {/* Recommendations */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all"></div>
-                <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-xl">
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                      Personalized Recommendations
-                    </span>
-                  </h2>
-                  <div className="grid gap-4">
-                    {performanceAnalysis.recommendations.map((recommendation, i) => (
-                      <div key={i} className="relative group/rec">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-xl blur-lg group-hover/rec:from-blue-500/10 group-hover/rec:to-purple-500/10 transition-all"></div>
-                        <div className="relative bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 hover:border-blue-500/30 transition-all">
-                          <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-lg">
-                              {i + 1}
-                            </div>
-                            <p className="text-slate-300 leading-relaxed flex-1 pt-1">{recommendation}</p>
-                          </div>
+                        {/* Feedback */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-green-400 mb-2">Feedback:</h4>
+                          <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg">
+                            {qa.feedback}
+                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-6">
+                {/* Strengths */}
+                <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
+                  <h2 className="text-xl font-bold text-green-400 mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    Strengths
+                  </h2>
+                  <ul className="space-y-3">
+                    {performanceAnalysis.strengths.map((strength, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mt-2 shrink-0"></div>
+                        {strength}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Areas for Improvement */}
+                <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
+                  <h2 className="text-xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    Areas for Improvement
+                  </h2>
+                  <ul className="space-y-3">
+                    {performanceAnalysis.improvements.map((improvement, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
+                        <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2 shrink-0"></div>
+                        {improvement}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Recommendations */}
+              <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-blue-400 mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  Recommendations for Next Session
+                </h2>
+                <div className="grid gap-3">
+                  {performanceAnalysis.recommendations.map((recommendation, i) => (
+                    <div key={i} className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                          {i + 1}
+                        </div>
+                        <p className="text-sm text-slate-300 leading-relaxed">{recommendation}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Session Stats */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all"></div>
-                <div className="relative bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-xl">
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                    <BarChart3 className="w-7 h-7 text-cyan-400" />
-                    Session Statistics
-                  </h2>
-                  <div className="grid grid-cols-4 gap-6">
-                    <div className="relative group/stat">
-                      <div className="absolute inset-0 bg-cyan-500/5 rounded-xl blur-lg group-hover/stat:bg-cyan-500/10 transition-all"></div>
-                      <div className="relative text-center bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/50 transition-all">
-                        <Clock className="w-6 h-6 text-cyan-400 mx-auto mb-3" />
-                        <div className="text-3xl font-black text-cyan-400 mb-2">
-                          {Math.round((Date.now() - sessionData.startTime) / 60000)}
-                        </div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Minutes</div>
-                      </div>
+              <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-white mb-4">Session Statistics</h2>
+                <div className="grid grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-cyan-400 mb-1">
+                      {Math.round((Date.now() - sessionData.startTime) / 60000)}
                     </div>
-                    <div className="relative group/stat">
-                      <div className="absolute inset-0 bg-orange-500/5 rounded-xl blur-lg group-hover/stat:bg-orange-500/10 transition-all"></div>
-                      <div className="relative text-center bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-orange-500/50 transition-all">
-                        <Send className="w-6 h-6 text-orange-400 mx-auto mb-3" />
-                        <div className="text-3xl font-black text-orange-400 mb-2">
-                          {sessionData.attempts.length}
-                        </div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Attempts</div>
-                      </div>
+                    <div className="text-sm text-slate-400">Minutes</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-400 mb-1">
+                      {sessionData.attempts.length}
                     </div>
-                    <div className="relative group/stat">
-                      <div className="absolute inset-0 bg-purple-500/5 rounded-xl blur-lg group-hover/stat:bg-purple-500/10 transition-all"></div>
-                      <div className="relative text-center bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-purple-500/50 transition-all">
-                        <Code2 className="w-6 h-6 text-purple-400 mx-auto mb-3" />
-                        <div className="text-3xl font-black text-purple-400 mb-2">
-                          {questions.length}
-                        </div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Problems</div>
-                      </div>
+                    <div className="text-sm text-slate-400">Attempts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-emerald-400 mb-1">
+                      {questions.length}
                     </div>
-                    <div className="relative group/stat">
-                      <div className="absolute inset-0 bg-emerald-500/5 rounded-xl blur-lg group-hover/stat:bg-emerald-500/10 transition-all"></div>
-                      <div className="relative text-center bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-emerald-500/50 transition-all">
-                        <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-3" />
-                        <div className="text-3xl font-black text-emerald-400 mb-2">
-                          {sessionData.attempts.reduce((sum, attempt) =>
-                            sum + attempt.results.filter(r => r.status === "Passed").length, 0
-                          )}
-                        </div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Tests Passed</div>
-                      </div>
+                    <div className="text-sm text-slate-400">Problems</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-emerald-400 mb-1">
+                      {sessionData.attempts.reduce((sum, attempt) =>
+                        sum + attempt.results.filter(r => r.status === "Passed").length, 0
+                      )}
                     </div>
+                    <div className="text-sm text-slate-400">Tests Passed</div>
                   </div>
                 </div>
               </div>
@@ -2733,13 +2574,10 @@ const GeminiCodeArena = () => {
           )}
 
           {!performanceAnalysis && (
-            <div className="text-center py-20">
-              <div className="relative inline-block">
-                <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-2xl animate-pulse"></div>
-                <Loader2 size={64} className="relative text-cyan-400 mb-6 animate-spin" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Analyzing Your Performance...</h3>
-              <p className="text-slate-400">Our AI is evaluating your code and generating personalized insights</p>
+            <div className="text-center py-16">
+              <Loader2 size={48} className="mx-auto text-slate-600 mb-4 animate-spin" />
+              <h3 className="text-xl font-semibold text-slate-400 mb-2">Analyzing Performance...</h3>
+              <p className="text-slate-500">Please wait while we analyze your coding session</p>
             </div>
           )}
         </div>
