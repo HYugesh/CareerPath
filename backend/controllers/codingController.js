@@ -246,7 +246,7 @@ const createMockExecutionResults = (code, testCases, language, testMode = 'submi
 };
 
 // Generate mock performance analysis
-const generateMockPerformanceAnalysis = (sessionDuration, totalAttempts, successRate, language) => {
+const generateMockPerformanceAnalysis = (sessionDuration, totalAttempts, successRate, language, questions = [], userCodes = []) => {
   const avgTimePerProblem = sessionDuration / totalAttempts / 60000; // minutes
 
   let overallRating = Math.max(1, Math.min(10, Math.round(successRate / 10) || 5));
@@ -272,6 +272,26 @@ const generateMockPerformanceAnalysis = (sessionDuration, totalAttempts, success
     "Focus on clean code principles"
   ];
 
+  // Generate per-question analysis
+  const questionAnalysis = questions.map((q, index) => {
+    const code = userCodes[index] || '';
+    const hasCode = code.trim().length > 0;
+    
+    return {
+      questionTitle: q.title,
+      questionId: q.id,
+      userApproach: hasCode ? "Implemented a solution using standard approach" : "No code submitted",
+      betterApproaches: hasCode ? [
+        "Consider using optimized data structures for better time complexity",
+        "Explore alternative algorithms that reduce space complexity"
+      ] : ["Submit a solution to receive feedback"],
+      rating: hasCode ? Math.max(5, Math.min(9, Math.round(successRate / 15))) : 3,
+      feedback: hasCode 
+        ? "Your solution demonstrates understanding of the problem. Consider optimizing for edge cases and performance."
+        : "No solution was submitted for this problem."
+    };
+  });
+
   return {
     overallRating: Math.max(1, Math.min(10, overallRating)),
     strengths,
@@ -282,7 +302,8 @@ const generateMockPerformanceAnalysis = (sessionDuration, totalAttempts, success
       correctness: Math.max(1, Math.min(10, Math.round(successRate / 10)))
     },
     recommendations,
-    summary: `You completed ${totalAttempts} coding attempts with a ${Math.round(successRate)}% success rate in ${Math.round(sessionDuration / 60000)} minutes. ${successRate >= 70 ? 'Great job! Keep up the excellent work.' : 'Keep practicing to improve your skills!'}`
+    summary: `You completed ${totalAttempts} coding attempts with a ${Math.round(successRate)}% success rate in ${Math.round(sessionDuration / 60000)} minutes. ${successRate >= 70 ? 'Great job! Keep up the excellent work.' : 'Keep practicing to improve your skills!'}`,
+    questionAnalysis
   };
 };
 
@@ -590,7 +611,7 @@ const analyzePerformance = async (req, res) => {
       console.log('[PERFORMANCE] Falling back to mock analysis');
       
       // Fallback to mock analysis if AI fails
-      const analysis = generateMockPerformanceAnalysis(sessionDuration, totalAttempts, successRate, language);
+      const analysis = generateMockPerformanceAnalysis(sessionDuration, totalAttempts, successRate, language, questions, userCodes);
       return res.json({ analysis });
     }
 

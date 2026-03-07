@@ -216,7 +216,7 @@ const runCode = async (req, res) => {
 const submitCode = async (req, res) => {
   try {
     // Extract required fields from request body
-    const { code, language, testCases, userId, problemId } = req.body;
+    const { code, language, testCases, problemId, questionTitle, topic, difficulty } = req.body;
     
     // Validate that all required fields are present
     if (!code || !language || !testCases) {
@@ -238,7 +238,7 @@ const submitCode = async (req, res) => {
     
     // Log submission for future tracking
     console.log('[CODE_EXEC] Code submission:', {
-      userId: userId || 'anonymous',
+      userId: req.user?.id || 'anonymous',
       problemId: problemId || 'unknown',
       language,
       languageId,
@@ -325,6 +325,34 @@ const submitCode = async (req, res) => {
     const failed = total - passed;
     const score = total > 0 ? Math.round((passed / total) * 100) : 0;
     
+    // Save submission to database if user is authenticated
+    if (req.user && problemId && questionTitle) {
+      try {
+        const CodeSubmission = require('../models/CodeSubmission');
+        
+        const submission = new CodeSubmission({
+          user: req.user.id,
+          questionId: problemId,
+          questionTitle: questionTitle,
+          code: code,
+          language: language,
+          topic: topic || 'General',
+          difficulty: difficulty || 'Medium',
+          testResults: {
+            passed: passed,
+            total: total,
+            score: score
+          }
+        });
+        
+        await submission.save();
+        console.log('[CODE_EXEC] Submission saved to database');
+      } catch (dbError) {
+        console.error('[CODE_EXEC] Failed to save submission to database:', dbError);
+        // Don't fail the request if DB save fails
+      }
+    }
+    
     // Step 8: Return structured response
     return res.status(200).json({
       success: true,
@@ -381,8 +409,38 @@ const getSupportedLanguages = async (req, res) => {
   }
 };
 
+/**
+ * Get user's code submissions
+ * GET /api/code/submissions
+ */
+const getUserSubmissions = async (req, res) => {
+  try {
+    const CodeSubmission = require('../models/CodeSubmission');
+    
+    // Get submissions for the authenticated user
+    const submissions = await CodeSubmission.find({ user: req.user.id })
+      .sort({ submittedAt: -1 })
+      .limit(50); // Limit to last 50 submissions
+    
+    console.log(`[CODE_EXEC] Retrieved ${submissions.length} submissions for user ${req.user.id}`);
+    
+    res.status(200).json({
+      success: true,
+      submissions: submissions
+    });
+  } catch (error) {
+    console.error('[CODE_EXEC] Error fetching submissions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch submissions',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   runCode,
   submitCode,
-  getSupportedLanguages
+  getSupportedLanguages,
+  getUserSubmissions
 };

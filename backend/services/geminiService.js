@@ -664,16 +664,21 @@ async function analyzeCodePerformance(sessionData) {
   } = sessionData;
 
   const sessionMinutes = Math.round(sessionDuration / 60000);
-  const avgTimePerProblem = sessionMinutes / totalAttempts;
+  const avgTimePerProblem = totalAttempts > 0 ? sessionMinutes / totalAttempts : 0;
 
-  // Prepare code samples for analysis
+  // Prepare code samples for analysis - match userCodes with questions
   const codeSamples = userCodes.map((code, index) => {
-    const attempt = attempts[index];
-    const question = questions.find(q => q.id === attempt?.questionId);
+    const question = questions[index];
+    // Find attempt for this question if it exists
+    const attempt = attempts.find(a => a.questionId === question?.id);
+    
     return {
       questionTitle: question?.title || `Problem ${index + 1}`,
+      questionId: question?.id || index + 1,
+      questionDifficulty: question?.difficulty || 'Medium',
       code: code,
-      results: attempt?.results || []
+      results: attempt?.results || [],
+      wasExecuted: !!attempt
     };
   }).filter(sample => sample.code && sample.code.trim().length > 0);
 
@@ -683,51 +688,63 @@ SESSION SUMMARY:
 - Programming Language: ${language}
 - Session Duration: ${sessionMinutes} minutes
 - Total Attempts: ${totalAttempts}
-- Success Rate: ${successRate.toFixed(1)}%
+- Success Rate: ${successRate ? successRate.toFixed(1) : 'N/A'}%
 - Average Time per Problem: ${avgTimePerProblem.toFixed(1)} minutes
 
 QUESTIONS ATTEMPTED:
-${questions.map((q, i) => `${i + 1}. ${q.title} (${q.difficulty} - ${q.topic})`).join('\n')}
+${questions.map((q, i) => `${i + 1}. ${q.title} (${q.difficulty || 'Medium'} - ${q.topic || 'General'})`).join('\n')}
 
 CODE SAMPLES:
 ${codeSamples.map((sample, i) => `
-Problem ${i + 1}: ${sample.questionTitle}
+Problem ${i + 1}: ${sample.questionTitle} (${sample.questionDifficulty})
 Code:
 \`\`\`${language.toLowerCase()}
 ${sample.code}
 \`\`\`
-Test Results: ${sample.results.filter(r => r.status === "Passed").length}/${sample.results.length} passed
+${sample.wasExecuted ? `Test Results: ${sample.results.filter(r => r.status === "Passed").length}/${sample.results.length} passed` : 'Not executed'}
 `).join('\n')}
 
 Analyze this coding session and provide a comprehensive performance evaluation in the following JSON format:
 
 {
   "overallRating": <number 1-10>,
-  "strengths": [<array of 2-4 specific strengths observed>],
-  "improvements": [<array of 2-4 specific areas for improvement>],
+  "strengths": [<array of 2-4 specific strengths observed in the actual code>],
+  "improvements": [<array of 2-4 specific areas for improvement based on code analysis>],
   "codeQuality": {
     "readability": <number 1-10>,
     "efficiency": <number 1-10>,
     "correctness": <number 1-10>
   },
-  "recommendations": [<array of 3-5 actionable recommendations>],
-  "summary": "<2-3 sentence summary of overall performance>"
+  "recommendations": [<array of 3-5 actionable recommendations for improving coding skills>],
+  "summary": "<2-3 sentence summary of overall performance>",
+  "questionAnalysis": [
+    {
+      "questionTitle": "<question title>",
+      "questionId": <question id>,
+      "userApproach": "<brief description of the approach the user took>",
+      "betterApproaches": [<array of 1-3 alternative/better approaches with brief explanations>],
+      "rating": <number 1-10 for this specific question>,
+      "feedback": "<specific feedback on this solution - what was good, what could be improved>"
+    }
+  ]
 }
 
 ANALYSIS GUIDELINES:
-1. Be specific and constructive in feedback
-2. Reference actual code patterns observed
-3. Consider the difficulty level and time taken
-4. Provide actionable recommendations
-5. Be encouraging but honest
-6. Focus on ${language}-specific best practices
+1. Be specific and constructive in feedback - reference actual code patterns you see
+2. For each question, analyze the user's approach and suggest better alternatives if applicable
+3. Provide individual ratings for each question based on code quality, efficiency, and correctness
+4. If the user's approach is already optimal, acknowledge it and provide minor improvements
+5. Consider the difficulty level and time taken
+6. Focus on ${language}-specific best practices and idioms
+7. If code wasn't executed, still analyze the logic and approach
+8. For better approaches, explain WHY they are better (time complexity, space complexity, readability, etc.)
 
 Return ONLY the JSON object, no markdown, no explanations.`;
 
   try {
     const jsonResponse = await callGemini(prompt, {
       temperature: 0.7,
-      maxOutputTokens: 2000
+      maxOutputTokens: 3000
     });
 
     // Parse and validate the response
