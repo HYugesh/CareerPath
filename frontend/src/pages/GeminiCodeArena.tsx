@@ -1817,7 +1817,7 @@ const GeminiCodeArena = () => {
     const currentQuestion = questions[currentQIndex];
 
     return (
-      <div className="h-screen flex flex-col relative coding-container overflow-hidden" style={{ background: '#1E1E1E', color: '#E2E8F0' }}>
+      <div className="h-screen flex flex-col relative coding-container overflow-hidden" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
         {/* Fullscreen Notification */}
         {showFullscreenNotification && (
           <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-50 bg-[#2563EB]/90 backdrop-blur-sm text-white px-6 py-3 rounded-lg shadow-xl border border-blue-400/30 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -1830,7 +1830,7 @@ const GeminiCodeArena = () => {
         )}
 
         {/* Top Header */}
-        <div className="h-12 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-4 shrink-0 z-[200]">
+        <div className="h-12 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-4 shrink-0 z-[200]" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
           {/* Left - Session Info */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
@@ -1862,13 +1862,13 @@ const GeminiCodeArena = () => {
         </div>
 
         {/* Main Content Area - 3 Column Layout */}
-        <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="flex-1 flex overflow-hidden min-h-0" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
           {/* Left Sidebar - Questions List */}
           {problemPanelVisible ? (
             <>
               <div style={{ width: `${problemPanelWidth}%` }} className="bg-[#1E1E1E] border-r border-[#3E3E42] flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-3">
+                <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-3" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
                   <span className="text-xs font-semibold text-slate-300 uppercase">Questions</span>
                   <button
                     onClick={() => setProblemPanelVisible(false)}
@@ -1880,7 +1880,7 @@ const GeminiCodeArena = () => {
                 </div>
 
                 {/* Questions List */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
                   {questions.map((q, index) => (
                     <button
                       key={q.id}
@@ -1945,7 +1945,7 @@ const GeminiCodeArena = () => {
           >
 
             {/* Tabs */}
-            <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4">
+            <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
               <button
                 onClick={() => setMiddleTab("problem")}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -1969,7 +1969,7 @@ const GeminiCodeArena = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
               {middleTab === "problem" && (
                 <div className="space-y-6 max-w-4xl">
                   {/* Title */}
@@ -2176,7 +2176,7 @@ const GeminiCodeArena = () => {
                 {/* Editor Section */}
                 <div style={{ height: `${100 - testCasesPanelHeight}%` }} className="flex flex-col overflow-hidden border-b border-[#3E3E42]">
                   {/* Editor Header */}
-                  <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-3 z-[200] relative">
+                  <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-3 z-[200] relative" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
                     {/* Language Selector (moved from right) */}
                     <div className="relative language-dropdown">
                       <button
@@ -2207,7 +2207,6 @@ const GeminiCodeArena = () => {
                       )}
                     </div>
                     
-                    {/* Run and Submit Buttons (moved from top header) */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleRunCode}
@@ -2260,9 +2259,9 @@ const GeminiCodeArena = () => {
                 />
 
                 {/* Test Cases / Results Section */}
-                <div style={{ height: `${testCasesPanelHeight}%` }} className="flex flex-col overflow-hidden">
+                <div style={{ height: `${testCasesPanelHeight}%` }} className="flex flex-col overflow-hidden" >
                   {/* Tabs */}
-                  <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4">
+                  <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
                     <button
                       onClick={() => setTestCasesTab("cases")}
                       className={`px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -2296,12 +2295,12 @@ const GeminiCodeArena = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 overflow-hidden bg-[#1E1E1E]">
+                  <div className="flex-1 overflow-hidden bg-[#1E1E1E]" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
                     {/* Test Cases Tab - Show public test cases from description */}
                     {testCasesTab === "cases" && (
                       <div className="h-full flex">
                         {/* Test Case List */}
-                        <div className="w-32 border-r border-[#3E3E42] bg-[#252526] p-2 space-y-2 overflow-y-auto">
+                        <div className="w-32 border-r border-[#3E3E42] bg-[#252526] p-2 space-y-2 overflow-y-auto" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
                           {currentQuestion?.examples?.map((ex, index) => (
                             <button
                               key={index}
