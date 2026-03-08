@@ -105,11 +105,25 @@ interface PerformanceAnalysis {
   questionAnalysis?: {
     questionTitle: string;
     questionId: number;
+    attempted?: boolean;
     userApproach: string;
+    timeComplexity?: string;
     betterApproaches: string[];
     rating: number;
     feedback: string;
   }[];
+  sessionMetadata?: {
+    duration: number;
+    language: string;
+    difficulty: string;
+    topic: string;
+    totalQuestions: number;
+    attemptedQuestions: number;
+    totalSubmissions: number;
+    totalTests: number;
+    passedTests: number;
+    successRate: number;
+  };
 }
 
 interface Submission {
@@ -162,6 +176,78 @@ const getMonacoLanguage = (language: Language): string => {
   }
 };
 
+// Utility function to format text with proper structure (bullet points, numbered lists, line breaks)
+const FormattedText = ({ text }: { text: string }) => {
+  if (!text) return null;
+
+  // Split text into lines
+  const lines = text.split('\n').filter(line => line.trim());
+
+  return (
+    <div className="space-y-2">
+      {lines.map((line, index) => {
+        const trimmedLine = line.trim();
+        
+        // Check for numbered list (1. 2. 3. etc.)
+        const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+        if (numberedMatch) {
+          return (
+            <div key={index} className="flex items-start gap-3 pl-1">
+              <span className="text-cyan-400 font-bold shrink-0 min-w-[1.5rem]">{numberedMatch[1]}.</span>
+              <span className="flex-1">{numberedMatch[2]}</span>
+            </div>
+          );
+        }
+
+        // Check for bullet points (-, *, •)
+        const bulletMatch = trimmedLine.match(/^[-*•]\s+(.+)$/);
+        if (bulletMatch) {
+          return (
+            <div key={index} className="flex items-start gap-3 pl-1">
+              <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full mt-2 shrink-0"></div>
+              <span className="flex-1">{bulletMatch[1]}</span>
+            </div>
+          );
+        }
+
+        // Check for section headers (text ending with :)
+        if (trimmedLine.endsWith(':') && trimmedLine.length < 50) {
+          return (
+            <div key={index} className="font-semibold text-white mt-3 mb-1">
+              {trimmedLine}
+            </div>
+          );
+        }
+
+        // Check for bold text (**text**)
+        const boldMatch = trimmedLine.match(/\*\*(.+?)\*\*/g);
+        if (boldMatch) {
+          let formattedLine = trimmedLine;
+          boldMatch.forEach(match => {
+            const boldText = match.replace(/\*\*/g, '');
+            formattedLine = formattedLine.replace(match, `<strong class="text-white font-semibold">${boldText}</strong>`);
+          });
+          return <div key={index} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine }} />;
+        }
+
+        // Check for code snippets (`code`)
+        const codeMatch = trimmedLine.match(/`([^`]+)`/g);
+        if (codeMatch) {
+          let formattedLine = trimmedLine;
+          codeMatch.forEach(match => {
+            const codeText = match.replace(/`/g, '');
+            formattedLine = formattedLine.replace(match, `<code class="bg-slate-800 text-cyan-300 px-1.5 py-0.5 rounded text-xs font-mono">${codeText}</code>`);
+          });
+          return <div key={index} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine }} />;
+        }
+
+        // Regular paragraph
+        return <p key={index} className="leading-relaxed">{trimmedLine}</p>;
+      })}
+    </div>
+  );
+};
+
 // --- API Client ---
 // Using backend API instead of direct Gemini calls for better reliability
 
@@ -171,7 +257,6 @@ interface QuestionHistory {
   timestamp: number;
   topic: string;
   difficulty: Difficulty;
-  language: Language;
   count: number;
   questions: Question[];
 }
@@ -187,14 +272,13 @@ const getQuestionHistory = (): QuestionHistory[] => {
 };
 
 // Save questions to history
-const saveToHistory = (topic: string, difficulty: Difficulty, language: Language, count: number, questions: Question[]) => {
+const saveToHistory = (topic: string, difficulty: Difficulty, count: number, questions: Question[]) => {
   const history = getQuestionHistory();
   const newEntry: QuestionHistory = {
     id: Date.now().toString(),
     timestamp: Date.now(),
     topic,
     difficulty,
-    language,
     count,
     questions
   };
@@ -319,6 +403,9 @@ const GeminiCodeArena = () => {
       setViewportWidth(width);
       setIsMobile(width < 1024);
     };
+
+    // Initial check
+    handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -666,11 +753,6 @@ const GeminiCodeArena = () => {
   // --- Actions ---
 
   const generateQuestions = async () => {
-    if (!selectedTopic) {
-      alert("Please select a topic first");
-      return;
-    }
-
     setLoading(true);
     setFullscreenError(null);
 
@@ -681,7 +763,6 @@ const GeminiCodeArena = () => {
         const matchingHistory = history.find(h =>
           h.topic === selectedTopic &&
           h.difficulty === difficulty &&
-          h.language === language &&
           h.count === count
         );
 
@@ -702,7 +783,7 @@ const GeminiCodeArena = () => {
           return;
         } else {
           // No matching history found
-          alert(`No previous questions found for ${selectedTopic} (${difficulty}, ${language}, ${count} problems). Please select "New" mode to generate fresh questions or try different settings.`);
+          alert(`No previous questions found for ${selectedTopic} (${difficulty}, ${count} problems). Please select "New" mode to generate fresh questions or try different settings.`);
           setLoading(false);
           return;
         }
@@ -712,13 +793,12 @@ const GeminiCodeArena = () => {
       // Clear previously saved codes when starting NEW session
       clearSavedCodes();
       
-      console.log("Generating new questions via backend API:", { selectedTopic, difficulty, language, count });
+      console.log("Generating new questions via backend API:", { selectedTopic, difficulty, count });
 
-      // Call backend API to generate questions
+      // Call backend API to generate questions (without language)
       const response = await axios.post("/coding/generate-questions", {
         topic: selectedTopic,
         difficulty: difficulty,
-        language: language,
         count: count
       });
 
@@ -727,8 +807,8 @@ const GeminiCodeArena = () => {
       if (generatedQuestions && generatedQuestions.length > 0) {
         console.log(`Successfully received ${generatedQuestions.length} questions from backend`);
 
-        // Save to history (only for "New" mode)
-        saveToHistory(selectedTopic, difficulty, language, count, generatedQuestions);
+        // Save to history (only for "New" mode, without language)
+        saveToHistory(selectedTopic, difficulty, count, generatedQuestions);
         setQuestionHistory(getQuestionHistory());
 
         setQuestions(generatedQuestions);
@@ -1123,6 +1203,8 @@ const GeminiCodeArena = () => {
       const passedTests = sessionData.attempts.reduce((sum, attempt) =>
         sum + attempt.results.filter(r => r.status === "Passed").length, 0
       );
+      const sessionDuration = Date.now() - sessionData.startTime;
+      const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
       const fallbackAnalysis: PerformanceAnalysis = {
         overallRating: Math.round((passedTests / totalTests) * 10) || 5,
@@ -1138,7 +1220,19 @@ const GeminiCodeArena = () => {
           "Review failed test cases to understand edge cases",
           "Focus on code optimization and clean coding practices"
         ],
-        summary: `You completed ${sessionData.attempts.length} attempts with ${Math.round((passedTests / totalTests) * 100)}% test success rate. Keep practicing to improve your problem-solving skills!`
+        summary: `You completed ${sessionData.attempts.length} attempts with ${successRate}% test success rate. Keep practicing to improve your problem-solving skills!`,
+        sessionMetadata: {
+          duration: Math.round(sessionDuration / 60000),
+          language: language,
+          difficulty: difficulty,
+          topic: selectedTopic,
+          totalQuestions: questions.length,
+          attemptedQuestions: sessionData.attempts.length > 0 ? questions.length : 0,
+          totalSubmissions: sessionData.attempts.length,
+          totalTests: totalTests,
+          passedTests: passedTests,
+          successRate: successRate
+        }
       };
 
       setPerformanceAnalysis(fallbackAnalysis);
@@ -1255,6 +1349,73 @@ const GeminiCodeArena = () => {
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+
+  // --- Mobile Block Screen ---
+  if (isMobile) {
+    return (
+      <div className="min-h-screen text-slate-300 font-sans p-6 flex flex-col items-center justify-center" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+        <div className="w-full max-w-md bg-gray-900/80 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden text-center">
+          {/* Subtle gradient glow */}
+          <div className="absolute top-0 right-0 w-48 h-1 bg-gradient-to-l from-[#10B981] to-transparent opacity-50" />
+
+          <div className="space-y-6">
+            {/* Icon */}
+            <div className="w-20 h-20 bg-gray-900 border border-slate-700 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-cyan-500/10">
+              <Terminal className="text-[#60A5FA]" size={40} />
+            </div>
+
+            {/* Title */}
+            <div>
+              <h1 className="text-3xl font-bold text-[#22D3EE] mb-3 tracking-tight">Desktop Only</h1>
+              <p className="text-slate-400 text-base leading-relaxed">
+                CodeArena requires a desktop or laptop computer for the best coding experience.
+              </p>
+            </div>
+
+            {/* Reasons */}
+            <div className="bg-gray-900 border border-slate-800 rounded-xl p-6 text-left space-y-4">
+              <h3 className="text-lg font-semibold text-white mb-3">Why Desktop?</h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full mt-2 shrink-0"></div>
+                  <p className="text-sm text-slate-300">Code editor requires significant screen space</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 shrink-0"></div>
+                  <p className="text-sm text-slate-300">Physical keyboard essential for coding</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mt-2 shrink-0"></div>
+                  <p className="text-sm text-slate-300">Multi-panel layout optimized for wide screens</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2 shrink-0"></div>
+                  <p className="text-sm text-slate-300">Professional interview environment simulation</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Call to Action */}
+            <div className="bg-black/40 border border-slate-800 rounded-xl p-5">
+              <p className="text-slate-300 text-sm mb-2">
+                Please switch to a desktop or laptop computer to access CodeArena.
+              </p>
+              <p className="text-slate-500 text-xs">
+                Minimum screen width: 1024px
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-slate-800/50">
+              <p className="text-slate-500 text-xs">
+                CodeArena is designed to simulate real coding interview environments, which require desktop setups.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // --- Setup View ---
   if (view === "setup") {
@@ -1416,10 +1577,6 @@ const GeminiCodeArena = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Generating Questions...
                 </>
-              ) : !selectedTopic ? (
-                <>
-                  Select a Topic First
-                </>
               ) : (
                 <>
                   {questionMode === "Previous" ? "Load Previous" : "Begin Challenge"} <ChevronRight size={20} />
@@ -1494,9 +1651,6 @@ const GeminiCodeArena = () => {
                           {entry.difficulty}
                         </span>
                         <span className="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
-                          {entry.language}
-                        </span>
-                        <span className="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
                           {entry.count} problems
                         </span>
                       </div>
@@ -1509,7 +1663,6 @@ const GeminiCodeArena = () => {
                         setQuestions(entry.questions);
                         setSelectedTopic(entry.topic);
                         setDifficulty(entry.difficulty);
-                        setLanguage(entry.language);
                         setCount(entry.count);
                         
                         // Clear editor - don't load saved code for previous sessions
@@ -1613,7 +1766,7 @@ const GeminiCodeArena = () => {
 
             {/* Session Info */}
             <div className="bg-black/40 border border-slate-800 rounded-xl p-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-slate-500">Topic:</span>
                   <span className="text-white ml-2 font-medium">{selectedTopic}</span>
@@ -1623,10 +1776,6 @@ const GeminiCodeArena = () => {
                   <span className={`ml-2 font-medium ${difficulty === 'Easy' ? 'text-green-400' :
                     difficulty === 'Medium' ? 'text-yellow-400' : 'text-red-400'
                     }`}>{difficulty}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500">Language:</span>
-                  <span className="text-white ml-2 font-medium">{language}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Problems:</span>
@@ -2374,7 +2523,9 @@ const GeminiCodeArena = () => {
                     </div>
                   </div>
                 </div>
-                <p className="text-slate-300 leading-relaxed">{performanceAnalysis.summary}</p>
+                <p className="text-slate-300 leading-relaxed">
+                  <FormattedText text={performanceAnalysis.summary} />
+                </p>
               </div>
 
               {/* Code Quality Metrics */}
@@ -2429,7 +2580,11 @@ const GeminiCodeArena = () => {
                   </h2>
                   <div className="space-y-6">
                     {performanceAnalysis.questionAnalysis.map((qa, index) => (
-                      <div key={qa.questionId} className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+                      <div key={qa.questionId} className={`border rounded-xl p-5 ${
+                        qa.attempted === false 
+                          ? 'bg-orange-900/20 border-orange-700/50' 
+                          : 'bg-slate-800/50 border-slate-700'
+                      }`}>
                         {/* Question Header */}
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
@@ -2437,13 +2592,19 @@ const GeminiCodeArena = () => {
                               <span className="text-lg font-bold text-white">
                                 {index + 1}. {qa.questionTitle}
                               </span>
-                              <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                qa.rating >= 8 ? 'bg-green-500/20 text-green-400' :
-                                qa.rating >= 6 ? 'bg-yellow-500/20 text-yellow-400' :
-                                'bg-red-500/20 text-red-400'
-                              }`}>
-                                {qa.rating}/10
-                              </div>
+                              {qa.attempted === false ? (
+                                <div className="px-3 py-1 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400">
+                                  Not Attempted
+                                </div>
+                              ) : (
+                                <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                  qa.rating >= 8 ? 'bg-green-500/20 text-green-400' :
+                                  qa.rating >= 6 ? 'bg-yellow-500/20 text-yellow-400' :
+                                  'bg-red-500/20 text-red-400'
+                                }`}>
+                                  {qa.rating}/10
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2451,32 +2612,44 @@ const GeminiCodeArena = () => {
                         {/* Your Approach */}
                         <div className="mb-4">
                           <h4 className="text-sm font-semibold text-blue-400 mb-2">Your Approach:</h4>
-                          <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg">
-                            {qa.userApproach}
-                          </p>
+                          <div className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg">
+                            <FormattedText text={qa.userApproach} />
+                          </div>
                         </div>
+
+                        {/* Time Complexity */}
+                        {qa.timeComplexity && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-purple-400 mb-2">Time Complexity:</h4>
+                            <div className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg">
+                              <FormattedText text={qa.timeComplexity} />
+                            </div>
+                          </div>
+                        )}
 
                         {/* Better Approaches */}
                         {qa.betterApproaches && qa.betterApproaches.length > 0 && (
                           <div className="mb-4">
                             <h4 className="text-sm font-semibold text-cyan-400 mb-2">Better Approaches:</h4>
-                            <ul className="space-y-2">
+                            <div className="space-y-2">
                               {qa.betterApproaches.map((approach, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg">
+                                <div key={i} className="flex items-start gap-2 text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg">
                                   <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
-                                  <span>{approach}</span>
-                                </li>
+                                  <div className="flex-1">
+                                    <FormattedText text={approach} />
+                                  </div>
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           </div>
                         )}
 
                         {/* Feedback */}
                         <div>
                           <h4 className="text-sm font-semibold text-green-400 mb-2">Feedback:</h4>
-                          <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg">
-                            {qa.feedback}
-                          </p>
+                          <div className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-lg">
+                            <FormattedText text={qa.feedback} />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2526,12 +2699,14 @@ const GeminiCodeArena = () => {
                 </h2>
                 <div className="grid gap-3">
                   {performanceAnalysis.recommendations.map((recommendation, i) => (
-                    <div key={i} className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4">
+                    <div key={i} className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
                       <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">
                           {i + 1}
                         </div>
-                        <p className="text-sm text-slate-300 leading-relaxed">{recommendation}</p>
+                        <div className="flex-1 text-sm text-slate-300 leading-relaxed">
+                          <FormattedText text={recommendation} />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2541,32 +2716,71 @@ const GeminiCodeArena = () => {
               {/* Session Stats */}
               <div className="bg-gray-900/80 border border-slate-800 rounded-2xl p-6">
                 <h2 className="text-xl font-bold text-white mb-4">Session Statistics</h2>
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-5 gap-4">
+                  {/* Duration */}
                   <div className="text-center">
                     <div className="text-2xl font-bold text-cyan-400 mb-1">
-                      {Math.round((Date.now() - sessionData.startTime) / 60000)}
+                      {performanceAnalysis.sessionMetadata?.duration || 0}
                     </div>
-                    <div className="text-sm text-slate-400">Minutes</div>
+                    <div className="text-xs text-slate-400">Minutes</div>
                   </div>
+                  
+                  {/* Questions Attempted */}
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-400 mb-1">
+                      {performanceAnalysis.sessionMetadata?.attemptedQuestions || 0}/{performanceAnalysis.sessionMetadata?.totalQuestions || 0}
+                    </div>
+                    <div className="text-xs text-slate-400">Attempted</div>
+                  </div>
+                  
+                  {/* Code Submissions */}
                   <div className="text-center">
                     <div className="text-2xl font-bold text-orange-400 mb-1">
-                      {sessionData.attempts.length}
+                      {performanceAnalysis.sessionMetadata?.totalSubmissions || 0}
                     </div>
-                    <div className="text-sm text-slate-400">Attempts</div>
+                    <div className="text-xs text-slate-400">Submissions</div>
                   </div>
+                  
+                  {/* Tests Passed */}
                   <div className="text-center">
                     <div className="text-2xl font-bold text-emerald-400 mb-1">
-                      {questions.length}
+                      {performanceAnalysis.sessionMetadata?.passedTests || 0}/{performanceAnalysis.sessionMetadata?.totalTests || 0}
                     </div>
-                    <div className="text-sm text-slate-400">Problems</div>
+                    <div className="text-xs text-slate-400">Tests Passed</div>
+                  </div>
+                  
+                  {/* Success Rate */}
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold mb-1 ${
+                      (performanceAnalysis.sessionMetadata?.successRate || 0) >= 80 ? 'text-green-400' :
+                      (performanceAnalysis.sessionMetadata?.successRate || 0) >= 60 ? 'text-yellow-400' :
+                      'text-red-400'
+                    }`}>
+                      {performanceAnalysis.sessionMetadata?.successRate || 0}%
+                    </div>
+                    <div className="text-xs text-slate-400">Success Rate</div>
+                  </div>
+                </div>
+                
+                {/* Additional Stats Row */}
+                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-700">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-purple-400 mb-1">
+                      {performanceAnalysis.sessionMetadata?.language || language}
+                    </div>
+                    <div className="text-xs text-slate-400">Language Used</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-emerald-400 mb-1">
-                      {sessionData.attempts.reduce((sum, attempt) =>
-                        sum + attempt.results.filter(r => r.status === "Passed").length, 0
-                      )}
+                    <div className="text-lg font-bold text-pink-400 mb-1">
+                      {performanceAnalysis.sessionMetadata?.difficulty || difficulty}
                     </div>
-                    <div className="text-sm text-slate-400">Tests Passed</div>
+                    <div className="text-xs text-slate-400">Difficulty Level</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-indigo-400 mb-1">
+                      {performanceAnalysis.sessionMetadata?.topic || selectedTopic}
+                    </div>
+                    <div className="text-xs text-slate-400">Topic</div>
                   </div>
                 </div>
               </div>

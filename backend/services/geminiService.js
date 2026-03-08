@@ -765,9 +765,191 @@ Return ONLY the JSON object, no markdown, no explanations.`;
   }
 }
 
+/**
+ * Analyze a single code submission using Gemini AI
+ * @param {Object} params - Analysis parameters
+ * @param {string} params.code - The student's code
+ * @param {string} params.language - Programming language
+ * @param {string} params.questionTitle - Question title
+ * @param {string} params.difficulty - Question difficulty
+ * @returns {Object} Analysis result with approach, betterApproach, feedback, rating
+ */
+async function analyzeCodeSubmission({ code, language, questionTitle, difficulty }) {
+  const prompt = `You are a senior software engineer reviewing a student's coding exam submission.
+
+Question: ${questionTitle}
+Difficulty: ${difficulty}
+Language: ${language}
+
+Analyze the following code and provide:
+1. **Approach Used**: Describe the algorithm/approach the student used
+2. **Time Complexity**: Explain the time complexity (e.g., O(n), O(n²))
+3. **Better Approach**: If a more optimal approach exists, describe it. If the current approach is optimal, say "Current approach is optimal"
+4. **Code Quality Feedback**: Provide constructive feedback on code quality, readability, and correctness
+5. **Rating**: Rate the solution from 1 to 10 (1=poor, 10=excellent)
+
+Return ONLY valid JSON in this exact format:
+{
+  "approach": "description of approach used",
+  "timeComplexity": "time complexity explanation",
+  "betterApproach": "better approach or 'Current approach is optimal'",
+  "feedback": "constructive feedback",
+  "rating": 7
+}
+
+Code to analyze:
+\`\`\`${language.toLowerCase()}
+${code}
+\`\`\`
+
+IMPORTANT: Return ONLY the JSON object, no additional text.`;
+
+  try {
+    const jsonResponse = await callGemini(prompt, {
+      temperature: 0.3,
+      maxOutputTokens: 2048,
+      useCache: false,
+      responseType: 'json'
+    });
+
+    const analysis = JSON.parse(jsonResponse);
+
+    // Validate and sanitize the response
+    return {
+      approach: analysis.approach || "Unable to determine approach",
+      timeComplexity: analysis.timeComplexity || "Not analyzed",
+      betterApproach: analysis.betterApproach || "",
+      feedback: analysis.feedback || "No feedback available",
+      rating: Math.min(Math.max(parseInt(analysis.rating) || 5, 1), 10)
+    };
+
+  } catch (error) {
+    console.error('[GEMINI] Code analysis failed:', error.message);
+    
+    // Return fallback analysis
+    return {
+      approach: "Unable to analyze approach due to AI error",
+      timeComplexity: "Not analyzed",
+      betterApproach: "",
+      feedback: "Analysis failed. Please try again later.",
+      rating: 5
+    };
+  }
+}
+
+/**
+ * Suggest approach for an unattempted question using Gemini AI
+ * @param {Object} params - Question parameters
+ * @param {string} params.questionTitle - Question title
+ * @param {string} params.questionDescription - Question description
+ * @param {string} params.difficulty - Question difficulty
+ * @param {string} params.topic - Question topic
+ * @param {string} params.language - Programming language
+ * @returns {Object} Suggested approach with guidance
+ */
+async function suggestApproachForQuestion({ questionTitle, questionDescription, difficulty, topic, language }) {
+  const prompt = `You are an expert coding instructor helping a student who did not attempt a coding problem.
+
+Question: ${questionTitle}
+Difficulty: ${difficulty}
+Topic: ${topic}
+Language: ${language}
+
+Question Description:
+${questionDescription}
+
+The student did not attempt this question. Provide educational guidance to help them understand how to approach this problem.
+
+Return ONLY valid JSON in this exact format:
+{
+  "approach": "Not Attempted",
+  "recommendedApproach": "detailed explanation of the recommended approach/algorithm to solve this problem",
+  "timeComplexity": "expected time complexity of the recommended approach (e.g., O(n), O(n log n))",
+  "guidance": "step-by-step guidance on how to implement the solution",
+  "feedback": "encouraging feedback and learning tips for this type of problem"
+}
+
+IMPORTANT: 
+- Be educational and encouraging
+- Explain the recommended approach clearly
+- Provide step-by-step guidance
+- Include time complexity analysis
+- Return ONLY the JSON object, no additional text`;
+
+  try {
+    const jsonResponse = await callGemini(prompt, {
+      temperature: 0.5,
+      maxOutputTokens: 3072,
+      useCache: false,
+      responseType: 'json'
+    });
+
+    const suggestion = JSON.parse(jsonResponse);
+
+    // Validate response completeness
+    const isComplete = suggestion.recommendedApproach && 
+                      suggestion.recommendedApproach.length > 20 &&
+                      suggestion.guidance && 
+                      suggestion.guidance.length > 20;
+
+    if (!isComplete) {
+      console.log('[GEMINI] Incomplete suggestion response, using fallback');
+      return generateFallbackSuggestion(difficulty, topic);
+    }
+
+    // Validate and sanitize the response
+    return {
+      approach: "Not Attempted",
+      recommendedApproach: suggestion.recommendedApproach || "No approach suggested",
+      timeComplexity: suggestion.timeComplexity || "N/A",
+      guidance: suggestion.guidance || "Practice similar problems to improve",
+      feedback: suggestion.feedback || "Keep practicing and you'll improve!"
+    };
+
+  } catch (error) {
+    console.error('[GEMINI] Approach suggestion failed:', error.message);
+    return generateFallbackSuggestion(difficulty, topic);
+  }
+}
+
+/**
+ * Generate fallback suggestion when AI fails
+ */
+function generateFallbackSuggestion(difficulty, topic) {
+  const difficultyGuidance = {
+    'Easy': {
+      recommendedApproach: "Start by understanding the problem requirements. For Easy problems, focus on basic data structures like arrays, strings, and simple loops. Break down the problem into smaller steps.",
+      guidance: "1. Read the problem carefully\n2. Identify input and output format\n3. Think about edge cases\n4. Write pseudocode first\n5. Implement step by step\n6. Test with examples",
+      timeComplexity: "O(n) or O(n log n)"
+    },
+    'Medium': {
+      recommendedApproach: "Medium problems often require combining multiple concepts. Consider using hash maps for O(1) lookups, two-pointer techniques, or sliding window approaches. Think about optimization.",
+      guidance: "1. Analyze the problem constraints\n2. Consider time and space complexity\n3. Think about optimal data structures\n4. Plan your algorithm before coding\n5. Handle edge cases\n6. Optimize after getting a working solution",
+      timeComplexity: "O(n) to O(n log n)"
+    },
+    'Hard': {
+      recommendedApproach: "Hard problems require advanced algorithms and data structures. Consider dynamic programming, graph algorithms, or complex data structures. Focus on optimization and handling all edge cases.",
+      guidance: "1. Break down the problem into subproblems\n2. Identify patterns (DP, graphs, trees)\n3. Consider multiple approaches\n4. Analyze time/space tradeoffs\n5. Implement carefully with edge cases\n6. Test thoroughly",
+      timeComplexity: "O(n log n) to O(n²)"
+    }
+  };
+
+  const guidance = difficultyGuidance[difficulty] || difficultyGuidance['Medium'];
+
+  return {
+    approach: "Not Attempted",
+    recommendedApproach: guidance.recommendedApproach,
+    timeComplexity: guidance.timeComplexity,
+    guidance: guidance.guidance,
+    feedback: `This is a ${difficulty} level ${topic} problem. Take your time to understand the requirements and practice similar problems to build your skills.`
+  };
+}
+
 module.exports = {
   generateQuizQuestions,
   evaluateQuizAnswers,
   generateCodingProblems,
-  analyzeCodePerformance
+  analyzeCodePerformance,
+  analyzeCodeSubmission,
+  suggestApproachForQuestion
 };

@@ -312,13 +312,13 @@ const generateMockPerformanceAnalysis = (sessionDuration, totalAttempts, success
 // @access  Public
 const generateCodingQuestions = async (req, res) => {
   try {
-    const { topic, difficulty, language, count } = req.body;
+    const { topic, difficulty, count } = req.body;
 
-    if (!topic || !difficulty || !language || !count) {
-      return res.status(400).json({ message: 'All fields are required: topic, difficulty, language, count' });
+    if (!topic || !difficulty || !count) {
+      return res.status(400).json({ message: 'Required fields: topic, difficulty, count' });
     }
 
-    console.log(`[CODING] Generating ${count} questions for ${topic} (${difficulty}) in ${language}`);
+    console.log(`[CODING] Generating ${count} questions for ${topic} (${difficulty})`);
 
     try {
       // Call Gemini AI to generate coding problems
@@ -354,7 +354,7 @@ const generateCodingQuestions = async (req, res) => {
           output_format: problem.output_format,
           constraints: problem.constraints || [],
           examples: problem.examples || [],
-          starterCode: getStarterCodeTemplate(language, 'solution', 'params'),
+          starterCode: '', // Empty starter code - language agnostic
           testCases: testCases
         };
       });
@@ -367,7 +367,7 @@ const generateCodingQuestions = async (req, res) => {
       console.log('[CODING] Falling back to static problems');
       
       // Fallback to static problems if AI fails
-      const questions = generateStaticCodingProblems(topic, difficulty, language, count);
+      const questions = generateStaticCodingProblems(topic, difficulty, 'JavaScript', count);
       return res.json({ questions });
     }
 
@@ -565,7 +565,7 @@ function generateFallbackQuestions(topic, difficulty, language, count) {
 }
 
 // @desc    Analyze coding performance using Gemini AI
-const analyzePerformance = async (req, res) => {
+analyzePerformance = async (req, res) => {
   try {
     const {
       sessionDuration,
@@ -576,49 +576,357 @@ const analyzePerformance = async (req, res) => {
       userCodes
     } = req.body;
 
-    if (!sessionDuration || !totalAttempts || !questions || !attempts || !language) {
+    if (!sessionDuration || !questions || !language) {
       return res.status(400).json({ message: 'Missing required fields for performance analysis' });
     }
 
-    // Calculate basic metrics
-    const totalTests = attempts.reduce((sum, attempt) => sum + attempt.results.length, 0);
-    const passedTests = attempts.reduce((sum, attempt) =>
+    const userId = req.user._id;
+
+    // Generate unique session ID based on timestamp
+    const sessionId = `session_${Date.now()}_${userId}`;
+
+    console.log(`[PERFORMANCE] Starting analysis for session ${sessionId} with ${questions.length} questions`);
+
+    // Import models
+    const CodeSubmission = require('../models/CodeSubmission');
+    const QuestionAnalysis = require('../models/QuestionAnalysis');
+    const { analyzeCodeSubmission, suggestApproachForQuestion } = require('../services/geminiService');
+
+    // Step 1: Fetch latest submission for each question using aggregation
+    const questionIds = questions.map(q => q.id.toString());
+
+    const latestSubmissions = await CodeSubmission.aggregate([
+      {
+        $match: {
+          user: userId,
+          questionId: { $in: questionIds }
+        }
+      },
+      {
+        $sort: { submittedAt: -1 }
+      },
+      {
+        $group: {
+          _id: "$questionId",
+          latestSubmission: { $first: "$$ROOT" }
+        }
+      }
+    ]);
+
+    console.log(`[PERFORMANCE] Found ${latestSubmissions.length} submissions out of ${questions.length} questions`);
+
+    // Create a map of questionId to submission for quick lookup
+    const submissionMap = {};
+    latestSubmissions.forEach(item => {
+      submissionMap[item._id] = item.latestSubmission;
+    });
+
+    // Step 2: Analyze ALL questions (both attempted and unattempted)
+    const analysisPromises = questions.map(async (question) => {
+      const submission = submissionMap[question.id.toString()];
+
+      if (submission) {
+        // Question was attempted - analyze the submission
+        try {
+          console.log(`[PERFORMANCE] Analyzing submitted code for question ${question.id}: ${question.title}`);
+
+          // Call Gemini AI to analyze the code
+          const aiAnalysis = await analyzeCodeSubmission({
+            code: submission.code,
+            language: submission.language,
+            questionTitle: submission.questionTitle,
+            difficulty: submission.difficulty
+          });
+
+          // Store analysis in database
+          const questionAnalysis = new QuestionAnalysis({
+            user: userId,
+            sessionId: sessionId,
+            questionId: submission.questionId,
+            questionTitle: submission.questionTitle,
+            submissionId: submission._id,
+            code: submission.code,
+            language: submission.language,
+            approach: aiAnalysis.approach,
+            timeComplexity: aiAnalysis.timeComplexity || '',
+            betterApproach: aiAnalysis.betterApproach || '',
+            feedback: aiAnalysis.feedback,
+            rating: aiAnalysis.rating
+          });
+
+          await questionAnalysis.save();
+
+          console.log(`[PERFORMANCE] Saved analysis for question ${submission.questionId} with rating ${aiAnalysis.rating}/10`);
+
+          return {
+            questionId: submission.questionId,
+            questionTitle: submission.questionTitle,
+            attempted: true,
+            userApproach: aiAnalysis.approach,
+            timeComplexity: aiAnalysis.timeComplexity,
+            betterApproaches: aiAnalysis.betterApproach ? [aiAnalysis.betterApproach] : [],
+            rating: aiAnalysis.rating,
+            feedback: aiAnalysis.feedback
+          };
+        } catch (error) {
+          console.error(`[PERFORMANCE] Failed to analyze question ${question.id}:`, error.message);
+
+          // Return fallback analysis for attempted question
+          return {
+            questionId: question.id.toString(),
+            questionTitle: question.title,
+            attempted: true,
+            userApproach: "Unable to analyze approach",
+            timeComplexity: "N/A",
+            betterApproaches: [],
+            rating: 5,
+            feedback: "Analysis failed. Please try again."
+          };
+        }
+      } else {
+        // Question was NOT attempted - provide suggested approach
+        try {
+          console.log(`[PERFORMANCE] Question ${question.id} was not attempted. Generating suggested approach.`);
+
+          // Call Gemini AI to suggest an approach for the unattempted question
+          const suggestedApproach = await suggestApproachForQuestion({
+            questionTitle: question.title,
+            questionDescription: question.description || '',
+            difficulty: question.difficulty || 'Medium',
+            topic: question.topic || 'General',
+            language: language
+          });
+
+          // Store unattempted analysis in database
+          const questionAnalysis = new QuestionAnalysis({
+            user: userId,
+            sessionId: sessionId,
+            questionId: question.id.toString(),
+            questionTitle: question.title,
+            submissionId: null, // No submission for unattempted questions
+            code: '', // No code submitted
+            language: language,
+            approach: 'Not attempted',
+            timeComplexity: suggestedApproach.timeComplexity || 'N/A',
+            betterApproach: suggestedApproach.recommendedApproach || '',
+            feedback: `You did not attempt this question. ${suggestedApproach.guidance || ''} ${suggestedApproach.feedback || ''}`,
+            rating: 0 // 0 rating for unattempted questions
+          });
+
+          await questionAnalysis.save();
+
+          console.log(`[PERFORMANCE] Saved unattempted analysis for question ${question.id}`);
+
+          return {
+            questionId: question.id.toString(),
+            questionTitle: question.title,
+            attempted: false,
+            userApproach: "Not attempted",
+            timeComplexity: suggestedApproach.timeComplexity || "N/A",
+            betterApproaches: suggestedApproach.recommendedApproach ? [suggestedApproach.recommendedApproach] : [],
+            rating: 0,
+            feedback: `You did not attempt this question. ${suggestedApproach.guidance || ''} ${suggestedApproach.feedback || ''}`
+          };
+        } catch (error) {
+          console.error(`[PERFORMANCE] Failed to generate suggestion for unattempted question ${question.id}:`, error.message);
+
+          // Return fallback for unattempted question
+          return {
+            questionId: question.id.toString(),
+            questionTitle: question.title,
+            attempted: false,
+            userApproach: "Not attempted",
+            timeComplexity: "N/A",
+            betterApproaches: [],
+            rating: 0,
+            feedback: "You did not attempt this question. Consider reviewing the problem statement and trying different approaches."
+          };
+        }
+      }
+    });
+
+    const questionAnalysis = await Promise.all(analysisPromises);
+
+    // Calculate overall metrics (only for attempted questions)
+    const attemptedQuestions = questionAnalysis.filter(qa => qa.attempted);
+    const totalTests = attempts?.reduce((sum, attempt) => sum + attempt.results.length, 0) || 0;
+    const passedTests = attempts?.reduce((sum, attempt) =>
       sum + attempt.results.filter(r => r.status === "Passed").length, 0
-    );
+    ) || 0;
     const successRate = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
+    const avgRating = attemptedQuestions.length > 0
+      ? attemptedQuestions.reduce((sum, qa) => sum + qa.rating, 0) / attemptedQuestions.length
+      : 0;
 
-    console.log(`[PERFORMANCE] Analyzing session: ${totalAttempts} attempts, ${successRate.toFixed(1)}% success rate`);
+    // Build comprehensive analysis response
+    const analysis = {
+      sessionId: sessionId,
+      overallRating: Math.round(avgRating),
+      strengths: generateStrengths(questionAnalysis, successRate),
+      improvements: generateImprovements(questionAnalysis, successRate),
+      codeQuality: {
+        readability: Math.round(avgRating * 0.8),
+        efficiency: Math.round(avgRating * 0.7),
+        correctness: Math.round((successRate / 10))
+      },
+      recommendations: generateRecommendations(questionAnalysis, language),
+      summary: `You attempted ${attemptedQuestions.length} out of ${questions.length} problem(s)${attemptedQuestions.length > 0 ? ` with an average rating of ${avgRating.toFixed(1)}/10` : ''}. ${successRate > 0 ? `Test success rate: ${successRate.toFixed(1)}%.` : ''} ${attemptedQuestions.length < questions.length ? `${questions.length - attemptedQuestions.length} question(s) were not attempted.` : ''} Keep practicing to improve your problem-solving skills!`,
+      questionAnalysis: questionAnalysis,
+      // Session metadata for display
+      sessionMetadata: {
+        duration: Math.round(sessionDuration / 60000), // Convert to minutes
+        language: language,
+        difficulty: questions[0]?.difficulty || 'Medium',
+        topic: questions[0]?.topic || 'General',
+        totalQuestions: questions.length,
+        attemptedQuestions: attemptedQuestions.length,
+        totalSubmissions: totalAttempts,
+        totalTests: totalTests,
+        passedTests: passedTests,
+        successRate: Math.round(successRate)
+      }
+    };
 
-    try {
-      // Call Gemini AI for performance analysis
-      const { analyzeCodePerformance } = require('../services/geminiService');
-      
-      const analysis = await analyzeCodePerformance({
-        sessionDuration,
-        totalAttempts,
-        questions,
-        attempts,
-        language,
-        userCodes,
-        successRate
-      });
-
-      console.log(`[PERFORMANCE] Gemini analysis completed successfully`);
-      return res.json({ analysis });
-
-    } catch (aiError) {
-      console.error('[PERFORMANCE] Gemini AI analysis failed:', aiError.message);
-      console.log('[PERFORMANCE] Falling back to mock analysis');
-      
-      // Fallback to mock analysis if AI fails
-      const analysis = generateMockPerformanceAnalysis(sessionDuration, totalAttempts, successRate, language, questions, userCodes);
-      return res.json({ analysis });
-    }
+    console.log(`[PERFORMANCE] Analysis completed successfully. Overall rating: ${analysis.overallRating}/10, Attempted: ${attemptedQuestions.length}/${questions.length}`);
+    return res.json({ analysis });
 
   } catch (error) {
     console.error('Error analyzing performance:', error);
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
+}
+
+// Helper function to generate strengths based on analysis
+function generateStrengths(questionAnalysis, successRate) {
+  const strengths = [];
+  
+  const attemptedQuestions = questionAnalysis.filter(qa => qa.attempted !== false);
+  const highRatings = questionAnalysis.filter(qa => qa.rating >= 8).length;
+  
+  if (highRatings > 0) {
+    strengths.push(`Strong performance on ${highRatings} problem(s) with ratings 8+/10`);
+  }
+  
+  if (successRate >= 80) {
+    strengths.push("Excellent test case pass rate - shows strong attention to edge cases");
+  } else if (successRate >= 60) {
+    strengths.push("Good test case coverage - demonstrates solid problem-solving");
+  }
+  
+  if (attemptedQuestions.length > 0) {
+    strengths.push(`Attempted ${attemptedQuestions.length} out of ${questionAnalysis.length} problem(s)`);
+  }
+  
+  // Analyze code quality from ratings
+  const avgRating = attemptedQuestions.length > 0
+    ? attemptedQuestions.reduce((sum, qa) => sum + qa.rating, 0) / attemptedQuestions.length
+    : 0;
+  
+  if (avgRating >= 7) {
+    strengths.push("Consistent code quality across problems");
+  }
+  
+  if (strengths.length === 0) {
+    strengths.push("Completed the coding session");
+  }
+  
+  return strengths;
+}
+
+// Helper function to generate improvements based on analysis
+function generateImprovements(questionAnalysis, successRate) {
+  const improvements = [];
+  
+  const unattemptedCount = questionAnalysis.filter(qa => qa.attempted === false).length;
+  if (unattemptedCount > 0) {
+    improvements.push(`${unattemptedCount} problem(s) not attempted - try to attempt all questions`);
+  }
+  
+  const lowRatings = questionAnalysis.filter(qa => qa.attempted !== false && qa.rating < 6).length;
+  if (lowRatings > 0) {
+    improvements.push(`${lowRatings} problem(s) need improvement (rating below 6/10)`);
+  }
+  
+  const hasBetterApproaches = questionAnalysis.filter(qa => 
+    qa.attempted !== false && 
+    qa.betterApproaches.length > 0 && 
+    !qa.betterApproaches[0].toLowerCase().includes('optimal')
+  ).length;
+  
+  if (hasBetterApproaches > 0) {
+    improvements.push("Consider more optimal approaches for better time/space complexity");
+  }
+  
+  if (successRate < 60 && successRate > 0) {
+    improvements.push("Focus on test case coverage and edge cases");
+  }
+  
+  if (improvements.length === 0) {
+    improvements.push("Continue practicing to maintain your skill level");
+  }
+  
+  return improvements;
+}
+
+// Helper function to generate language-specific recommendations
+function generateRecommendations(questionAnalysis, language) {
+  const recommendations = [];
+  
+  const unattemptedCount = questionAnalysis.filter(qa => qa.attempted === false).length;
+  const attemptedCount = questionAnalysis.filter(qa => qa.attempted !== false).length;
+  const lowRatings = questionAnalysis.filter(qa => qa.attempted !== false && qa.rating < 6).length;
+  
+  // Language-specific practice recommendation
+  if (attemptedCount > 0) {
+    recommendations.push(`Practice more ${language} coding problems to improve fluency and syntax mastery`);
+  }
+  
+  // Review better approaches
+  const hasBetterApproaches = questionAnalysis.filter(qa => 
+    qa.attempted !== false && 
+    qa.betterApproaches.length > 0 && 
+    !qa.betterApproaches[0].toLowerCase().includes('optimal')
+  ).length;
+  
+  if (hasBetterApproaches > 0) {
+    recommendations.push("Review the better approaches suggested for each problem to learn optimization techniques");
+  }
+  
+  // Unattempted questions
+  if (unattemptedCount > 0) {
+    recommendations.push("Review the suggested approaches for unattempted questions to expand your problem-solving toolkit");
+  }
+  
+  // Time and space complexity
+  if (lowRatings > 0 || hasBetterApproaches > 0) {
+    recommendations.push("Focus on time and space complexity optimization - analyze Big O notation for your solutions");
+  }
+  
+  // Language-specific resources
+  const languageResources = {
+    'JavaScript': 'Study JavaScript-specific patterns like array methods (map, filter, reduce) and ES6+ features',
+    'Python': 'Explore Python built-in functions, list comprehensions, and standard library modules',
+    'Java': 'Master Java Collections Framework, streams API, and object-oriented design patterns',
+    'C++': 'Focus on STL containers, algorithms, and memory management best practices',
+    'C': 'Practice pointer manipulation, memory management, and efficient algorithm implementation',
+    'C#': 'Learn LINQ, async/await patterns, and .NET framework utilities',
+    'Ruby': 'Explore Ruby enumerable methods, blocks, and idiomatic Ruby patterns',
+    'Go': 'Study Go concurrency patterns, interfaces, and standard library packages',
+    'Rust': 'Master ownership, borrowing, and Rust\'s memory safety features',
+    'PHP': 'Learn PHP array functions, modern PHP features, and best practices',
+    'TypeScript': 'Leverage TypeScript type system, generics, and advanced type features',
+    'Kotlin': 'Explore Kotlin extension functions, coroutines, and functional programming features',
+    'R': 'Study R vectorization, data manipulation with dplyr, and statistical functions'
+  };
+  
+  if (languageResources[language]) {
+    recommendations.push(languageResources[language]);
+  }
+  
+  // General recommendation
+  recommendations.push("Solve problems daily to build consistency and improve pattern recognition");
+  
+  return recommendations.slice(0, 5); // Limit to 5 recommendations
 };
 
 module.exports = {
