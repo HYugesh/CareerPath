@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import api from '../api/axiosConfig';
 
 export default function SubComponentViewer({
   subComponent,
@@ -28,23 +29,12 @@ export default function SubComponentViewer({
 
   const handleMarkReviewed = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `/api/roadmaps/${roadmapId}/modules/${moduleId}/subcomponents/${subComponent.subComponentId}/review`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await api.put(
+        `/roadmaps/${roadmapId}/modules/${moduleId}/subcomponents/${subComponent.subComponentId}/review`
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        if (onStatusChange) {
-          onStatusChange(data.data);
-        }
+      if (onStatusChange) {
+        onStatusChange(response.data.data);
       }
     } catch (error) {
       console.error('Error marking as reviewed:', error);
@@ -54,25 +44,11 @@ export default function SubComponentViewer({
   const handleGenerateContent = async () => {
     setIsGenerating(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `/api/roadmaps/${roadmapId}/modules/${moduleId}/subcomponents/${subComponent.subComponentId}/generate`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      await api.post(
+        `/roadmaps/${roadmapId}/modules/${moduleId}/subcomponents/${subComponent.subComponentId}/generate`
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        // Refresh the page or update state
-        window.location.reload();
-      } else {
-        alert('Failed to generate content');
-      }
+      // Refresh the page or update state
+      window.location.reload();
     } catch (error) {
       console.error('Error generating content:', error);
       alert('Failed to generate content');
@@ -362,29 +338,16 @@ export default function SubComponentViewer({
                             await handleMarkReviewed();
                           }
 
-                          const token = localStorage.getItem('token');
-                          const response = await fetch(
-                            `/api/roadmaps/${roadmapId}/modules/${moduleId}/subtopics/${subComponent.subComponentId}/quiz/start`,
-                            {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                              }
-                            }
+                          const response = await api.post(
+                            `/roadmaps/${roadmapId}/modules/${moduleId}/subtopics/${subComponent.subComponentId}/quiz/start`
                           );
 
-                          if (response.ok) {
-                            const data = await response.json();
-                            // Navigate to quiz page
-                            window.location.href = `/roadmap/${roadmapId}/module/${moduleId}/subtopic/${subComponent.subComponentId}/quiz/${data.sessionId}`;
-                          } else {
-                            const error = await response.json();
-                            alert(error.message || 'Failed to start quiz');
-                          }
+                          // Navigate to quiz page
+                          window.location.href = `/roadmap/${roadmapId}/module/${moduleId}/subtopic/${subComponent.subComponentId}/quiz/${response.data.sessionId}`;
                         } catch (error) {
                           console.error('Error starting quiz:', error);
-                          alert('Failed to start quiz');
+                          const errorMessage = error.response?.data?.message || 'Failed to start quiz';
+                          alert(errorMessage);
                         }
                       }}
                       className={`

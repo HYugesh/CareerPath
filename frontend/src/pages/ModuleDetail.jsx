@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SubComponentViewer from '../components/SubComponentViewer';
+import api from '../api/axiosConfig';
 
 export default function ModuleDetail() {
   const { roadmapId, moduleId } = useParams();
@@ -19,7 +20,6 @@ export default function ModuleDetail() {
   const hydrateModuleContent = async (targetModule, roadmapData) => {
     setIsHydrating(true);
     try {
-      const token = localStorage.getItem('token');
       const payload = {
         requestType: 'HYDRATE_MODULE_CONTENT',
         moduleContext: {
@@ -39,30 +39,17 @@ export default function ModuleDetail() {
         }
       };
 
-      const response = await fetch(`/api/roadmaps/${roadmapId}/modules/${moduleId}/hydrate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await api.post(`/roadmaps/${roadmapId}/modules/${moduleId}/hydrate`, payload);
+      const newSubComponents = response.data.data;
 
-      if (response.ok) {
-        const resData = await response.json();
-        const newSubComponents = resData.data;
+      // Update local state
+      setModule(prev => ({
+        ...prev,
+        subComponents: newSubComponents
+      }));
 
-        // Update local state
-        setModule(prev => ({
-          ...prev,
-          subComponents: newSubComponents
-        }));
-
-        if (newSubComponents.length > 0) {
-          setSelectedSubComponent(newSubComponents[0]);
-        }
-      } else {
-        console.error('Failed to hydrate module');
+      if (newSubComponents.length > 0) {
+        setSelectedSubComponent(newSubComponents[0]);
       }
     } catch (error) {
       console.error('Error hydrating module:', error);
@@ -73,34 +60,22 @@ export default function ModuleDetail() {
 
   const fetchModuleData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/roadmaps/${roadmapId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await api.get(`/roadmaps/${roadmapId}`);
+      setRoadmap(response.data.data);
+      const foundModule = response.data.data.modules.find(m => m.moduleId === parseInt(moduleId));
+      setModule(foundModule);
 
-      if (response.ok) {
-        const data = await response.json();
-        setRoadmap(data.data);
-        const foundModule = data.data.modules.find(m => m.moduleId === parseInt(moduleId));
-        setModule(foundModule);
+      // Trigger progress check to update module status and unlock next module if needed
+      if (foundModule) {
+        checkModuleProgress(foundModule);
+      }
 
-        // Trigger progress check to update module status and unlock next module if needed
-        if (foundModule) {
-          checkModuleProgress(foundModule);
-        }
-
-        // Auto-select first sub-component if available, otherwise hydrate
-        if (foundModule?.subComponents && foundModule.subComponents.length > 0) {
-          setSelectedSubComponent(foundModule.subComponents[0]);
-        } else if (foundModule) {
-          // Trigger hydration if unlocked or active (or just always for detail view logic)
-          hydrateModuleContent(foundModule, data.data);
-        }
-      } else {
-        navigate(`/roadmap/${roadmapId}`);
+      // Auto-select first sub-component if available, otherwise hydrate
+      if (foundModule?.subComponents && foundModule.subComponents.length > 0) {
+        setSelectedSubComponent(foundModule.subComponents[0]);
+      } else if (foundModule) {
+        // Trigger hydration if unlocked or active (or just always for detail view logic)
+        hydrateModuleContent(foundModule, response.data.data);
       }
     } catch (error) {
       console.error('Error fetching module:', error);
@@ -112,14 +87,7 @@ export default function ModuleDetail() {
 
   const checkModuleProgress = async (currentModule) => {
     try {
-      const token = localStorage.getItem('token');
-      await fetch(`/api/roadmaps/${roadmapId}/modules/${currentModule.moduleId}/check-progress`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await api.post(`/roadmaps/${roadmapId}/modules/${currentModule.moduleId}/check-progress`);
       // Silently check progress - don't show errors to user
     } catch (error) {
       console.error('Error checking module progress:', error);
@@ -132,26 +100,13 @@ export default function ModuleDetail() {
 
   const handleStartQuiz = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/roadmaps/${roadmapId}/modules/${moduleId}/quiz/start`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Navigate to quiz page in roadmap mode
-        navigate(`/roadmap/${roadmapId}/module/${moduleId}/quiz/${data.sessionId}`);
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Failed to start quiz');
-      }
+      const response = await api.post(`/roadmaps/${roadmapId}/modules/${moduleId}/quiz/start`);
+      // Navigate to quiz page in roadmap mode
+      navigate(`/roadmap/${roadmapId}/module/${moduleId}/quiz/${response.data.sessionId}`);
     } catch (error) {
       console.error('Error starting quiz:', error);
-      alert('Failed to start quiz');
+      const errorMessage = error.response?.data?.message || 'Failed to start quiz';
+      alert(errorMessage);
     }
   };
 

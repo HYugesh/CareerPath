@@ -213,6 +213,9 @@ const submitModuleQuiz = async (req, res) => {
       if (module.completionCriteria?.quizScore) {
         module.completionCriteria.quizScore.completed = true;
       }
+      
+      // CRITICAL: Mark module as completed when quiz is passed
+      console.log(`✅ Module quiz passed with ${score}% - Marking module as complete`);
     } else if (attemptNumber >= module.knowledgeCheck.attemptsAllowed) {
       module.knowledgeCheck.status = 'FAILED';
       module.knowledgeCheck.cooldownUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -221,13 +224,13 @@ const submitModuleQuiz = async (req, res) => {
     }
 
     // Check module progress and unlock next module if needed
-    const { moduleProgress, nextModuleUnlocked } = await checkAndUnlockNextModule(roadmap, module);
+    const { moduleProgress, nextModuleUnlocked, moduleCompleted } = await checkAndUnlockNextModule(roadmap, module);
 
     await roadmap.save();
 
     const responseMessage = passed
-      ? (nextModuleUnlocked ? 'Quiz passed! Module progress updated. Next module unlocked!' : 'Quiz passed! Module progress updated.')
-      : 'Quiz completed. Try again to pass.';
+      ? (nextModuleUnlocked ? `🎉 Quiz passed with ${score}%! Module completed. Next module unlocked!` : `✅ Quiz passed with ${score}%! Module completed.`)
+      : `Quiz completed with ${score}%. You need 70% to pass. ${module.knowledgeCheck.attemptsAllowed - attemptNumber} attempt(s) remaining.`;
 
     res.status(200).json({
       success: true,
@@ -242,6 +245,7 @@ const submitModuleQuiz = async (req, res) => {
         attemptsRemaining: module.knowledgeCheck.attemptsAllowed - attemptNumber,
         moduleStatus: module.status,
         moduleProgress,
+        moduleCompleted,
         nextModuleUnlocked
       }
     });

@@ -4,6 +4,10 @@
  */
 const calculateModuleProgress = (module) => {
   if (!module.subComponents || module.subComponents.length === 0) {
+    // If no sub-components, check if module quiz is passed
+    if (module.knowledgeCheck?.status === 'PASSED') {
+      return 100;
+    }
     return 0;
   }
 
@@ -29,6 +33,11 @@ const calculateModuleProgress = (module) => {
 
   const totalSubComponents = module.subComponents.length;
   
+  // If module quiz is passed, module is 100% complete regardless of sub-component progress
+  if (module.knowledgeCheck?.status === 'PASSED') {
+    return 100;
+  }
+  
   // If no quiz topics, progress is based only on reviewed content
   if (totalQuizTopics === 0) {
     return Math.round((reviewedCount / totalSubComponents) * 100);
@@ -42,17 +51,31 @@ const calculateModuleProgress = (module) => {
 };
 
 /**
- * Check and unlock next module if current module reaches 90% progress
+ * Check and unlock next module if current module reaches 90% progress OR module quiz is passed
  * Also updates overall roadmap progress
  */
 const checkAndUnlockNextModule = async (roadmap, currentModule) => {
   const moduleProgress = calculateModuleProgress(currentModule);
   console.log(`📊 Module "${currentModule.title}" progress: ${moduleProgress}%`);
+  console.log(`📝 Module quiz status: ${currentModule.knowledgeCheck?.status || 'NOT_ATTEMPTED'}`);
 
   let nextModuleUnlocked = false;
+  let moduleCompleted = false;
 
-  if (moduleProgress >= 90 && currentModule.status !== 'COMPLETED') {
-    // Find next module
+  // Module is complete if:
+  // 1. Module quiz is passed (70%+), OR
+  // 2. Progress reaches 100% (all sub-topics reviewed and quizzes passed)
+  const isModuleComplete = currentModule.knowledgeCheck?.status === 'PASSED' || moduleProgress === 100;
+
+  if (isModuleComplete && currentModule.status !== 'COMPLETED') {
+    // Mark current module as completed
+    currentModule.status = 'COMPLETED';
+    currentModule.completed = true;
+    currentModule.completedAt = new Date();
+    moduleCompleted = true;
+    console.log(`✅ Module completed: ${currentModule.title}`);
+
+    // Find and unlock next module
     const currentModuleIndex = roadmap.modules.findIndex(m => m.moduleId === currentModule.moduleId);
     if (currentModuleIndex !== -1 && currentModuleIndex < roadmap.modules.length - 1) {
       const nextModule = roadmap.modules[currentModuleIndex + 1];
@@ -61,16 +84,20 @@ const checkAndUnlockNextModule = async (roadmap, currentModule) => {
       if (nextModule.status === 'LOCKED') {
         nextModule.status = 'UNLOCKED';
         nextModuleUnlocked = true;
-        console.log(`🔓 Next module unlocked: ${nextModule.title}`);
+        console.log(`🔓 Next module unlocked: ${nextModule.title} (Module ${nextModule.moduleId})`);
       }
     }
-
-    // Mark current module as completed if progress is 100%
-    if (moduleProgress === 100) {
-      currentModule.status = 'COMPLETED';
-      currentModule.completed = true;
-      currentModule.completedAt = new Date();
-      console.log(`✅ Module completed: ${currentModule.title}`);
+  } else if (moduleProgress >= 90 && currentModule.status !== 'COMPLETED') {
+    // If progress is 90%+ but not complete, still unlock next module
+    const currentModuleIndex = roadmap.modules.findIndex(m => m.moduleId === currentModule.moduleId);
+    if (currentModuleIndex !== -1 && currentModuleIndex < roadmap.modules.length - 1) {
+      const nextModule = roadmap.modules[currentModuleIndex + 1];
+      
+      if (nextModule.status === 'LOCKED') {
+        nextModule.status = 'UNLOCKED';
+        nextModuleUnlocked = true;
+        console.log(`🔓 Next module unlocked (90% progress): ${nextModule.title}`);
+      }
     }
   }
 
@@ -79,7 +106,7 @@ const checkAndUnlockNextModule = async (roadmap, currentModule) => {
   roadmap.progress = overallProgress;
   console.log(`📈 Overall roadmap progress: ${overallProgress}%`);
 
-  return { moduleProgress, nextModuleUnlocked, overallProgress };
+  return { moduleProgress, nextModuleUnlocked, overallProgress, moduleCompleted };
 };
 
 /**

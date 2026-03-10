@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/axiosConfig';
 
 const CORE_SUBJECTS = [
   {
@@ -66,18 +67,8 @@ export default function Roadmap() {
 
   const fetchRoadmaps = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/roadmaps', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRoadmaps(data.data || []);
-      }
+      const response = await api.get('/roadmaps');
+      setRoadmaps(response.data.data || []);
     } catch (error) {
       console.error('Error fetching roadmaps:', error);
     } finally {
@@ -87,29 +78,19 @@ export default function Roadmap() {
 
   const loadExistingRequirements = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/requirements', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const profile = data.data;
-          setFormData({
-            primaryDomain: profile.primaryDomain || '',
-            currentSkillLevel: profile.currentSkillLevel || '',
-            timeCommitment: profile.timeCommitment || '',
-            learningGoal: profile.learningGoal || '',
-            deadline: profile.deadline ? new Date(profile.deadline).toISOString().split('T')[0] : '',
-            knownTopics: profile.knownTopics || [],
-            preferredLearningStyle: profile.preferredLearningStyle || ''
-          });
-          setIsEditing(true);
-        }
+      const response = await api.get('/requirements');
+      if (response.data.success) {
+        const profile = response.data.data;
+        setFormData({
+          primaryDomain: profile.primaryDomain || '',
+          currentSkillLevel: profile.currentSkillLevel || '',
+          timeCommitment: profile.timeCommitment || '',
+          learningGoal: profile.learningGoal || '',
+          deadline: profile.deadline ? new Date(profile.deadline).toISOString().split('T')[0] : '',
+          knownTopics: profile.knownTopics || [],
+          preferredLearningStyle: profile.preferredLearningStyle || ''
+        });
+        setIsEditing(true);
       }
     } catch (error) {
       console.error('Error loading requirements:', error);
@@ -153,21 +134,14 @@ export default function Roadmap() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-
       // First, save requirements
-      const reqResponse = await fetch('/api/requirements', {
+      const reqResponse = await api({
         method: isEditing ? 'PUT' : 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+        url: '/requirements',
+        data: formData
       });
 
-      const reqData = await reqResponse.json();
-
-      if (reqData.success) {
+      if (reqResponse.data.success) {
         // Show AI generation interface
         setShowWizard(false);
         setShowAIGeneration(true);
@@ -177,24 +151,15 @@ export default function Roadmap() {
         await simulateAIGeneration();
 
         // Then, create roadmap from requirements with AI
-        const roadmapResponse = await fetch('/api/roadmaps', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            domain: formData.primaryDomain,
-            level: formData.currentSkillLevel,
-            goal: formData.learningGoal,
-            LearningStyle: formData.preferredLearningStyle
-          })
+        const roadmapResponse = await api.post('/roadmaps', {
+          domain: formData.primaryDomain,
+          level: formData.currentSkillLevel,
+          goal: formData.learningGoal,
+          LearningStyle: formData.preferredLearningStyle
         });
 
-        const roadmapData = await roadmapResponse.json();
-
-        if (roadmapData.success) {
-          setGeneratedRoadmap(roadmapData.data);
+        if (roadmapResponse.data.success) {
+          setGeneratedRoadmap(roadmapResponse.data.data);
           setAIGenerationStep(6); // Complete
 
           setTimeout(() => {
@@ -204,11 +169,11 @@ export default function Roadmap() {
             fetchRoadmaps(); // Refresh roadmaps list
           }, 2000);
         } else {
-          setErrors({ submit: roadmapData.message || 'Failed to create roadmap' });
+          setErrors({ submit: roadmapResponse.data.message || 'Failed to create roadmap' });
           setShowAIGeneration(false);
         }
       } else {
-        setErrors({ submit: reqData.message || 'Failed to save requirements' });
+        setErrors({ submit: reqResponse.data.message || 'Failed to save requirements' });
       }
     } catch (error) {
       console.error('Error saving requirements:', error);

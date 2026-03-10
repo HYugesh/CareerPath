@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SubComponentViewer from '../components/SubComponentViewer';
+import api from '../api/axiosConfig';
 
 export default function RoadmapDetail() {
   const { id } = useParams();
@@ -32,21 +33,9 @@ export default function RoadmapDetail() {
 
   const fetchRoadmap = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/roadmaps/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRoadmap(data.data);
-        setModules(data.data.modules || []);
-      } else {
-        navigate('/roadmap');
-      }
+      const response = await api.get(`/roadmaps/${id}`);
+      setRoadmap(response.data.data);
+      setModules(response.data.data.modules || []);
     } catch (error) {
       console.error('Error fetching roadmap:', error);
       navigate('/roadmap');
@@ -113,21 +102,10 @@ export default function RoadmapDetail() {
   // Save changes
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/roadmaps/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ modules })
-      });
-
-      if (response.ok) {
-        alert('Roadmap updated successfully!');
-        setIsEditing(false);
-        fetchRoadmap();
-      }
+      await api.put(`/roadmaps/${id}`, { modules });
+      alert('Roadmap updated successfully!');
+      setIsEditing(false);
+      fetchRoadmap();
     } catch (error) {
       console.error('Error updating roadmap:', error);
       alert('Failed to update roadmap');
@@ -210,26 +188,13 @@ export default function RoadmapDetail() {
   // Handle start quiz for module
   const handleStartQuiz = async (moduleId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/roadmaps/${id}/modules/${moduleId}/quiz/start`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Navigate to quiz page in roadmap mode using the dedicated route
-        navigate(`/roadmap/${id}/module/${moduleId}/quiz/${data.sessionId}`);
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Failed to start quiz');
-      }
+      const response = await api.post(`/roadmaps/${id}/modules/${moduleId}/quiz/start`);
+      // Navigate to quiz page in roadmap mode using the dedicated route
+      navigate(`/roadmap/${id}/module/${moduleId}/quiz/${response.data.sessionId}`);
     } catch (error) {
       console.error('Error starting quiz:', error);
-      alert('Failed to start quiz');
+      const errorMessage = error.response?.data?.message || 'Failed to start quiz';
+      alert(errorMessage);
     }
   };
 
@@ -245,7 +210,6 @@ export default function RoadmapDetail() {
     setHydratingModules(prev => ({ ...prev, [moduleId]: true }));
 
     try {
-      const token = localStorage.getItem('token');
       const payload = {
         requestType: 'HYDRATE_MODULE_CONTENT',
         moduleContext: {
@@ -265,28 +229,15 @@ export default function RoadmapDetail() {
         }
       };
 
-      const response = await fetch(`/api/roadmaps/${id}/modules/${moduleId}/hydrate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Update local state with new sub-components
-        setModules(prevModules =>
-          prevModules.map(m =>
-            m.moduleId === moduleId
-              ? { ...m, subComponents: data.data }
-              : m
-          )
-        );
-      } else {
-        console.error('Failed to hydrate module');
-      }
+      const response = await api.post(`/roadmaps/${id}/modules/${moduleId}/hydrate`, payload);
+      // Update local state with new sub-components
+      setModules(prevModules =>
+        prevModules.map(m =>
+          m.moduleId === moduleId
+            ? { ...m, subComponents: response.data.data }
+            : m
+        )
+      );
     } catch (error) {
       console.error('Error hydrating module:', error);
     } finally {
