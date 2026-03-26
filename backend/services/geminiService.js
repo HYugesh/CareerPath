@@ -4,7 +4,7 @@
  * Uses centralized Gemini client for optimized API usage
  */
 
-const { callGemini } = require('./geminiClient');
+const { callGemini, callGeminiText, callGeminiJSON } = require('./geminiClient');
 
 /**
  * Generate quiz questions for a domain
@@ -945,11 +945,214 @@ function generateFallbackSuggestion(difficulty, topic) {
   };
 }
 
+/**
+ * Phase 1: Generate subtopic metadata only (titles, descriptions, importance levels)
+ * @param {string} moduleTitle - The module title
+ * @param {string} moduleDescription - The module description
+ * @param {string} domain - The learning domain
+ * @param {string} skillLevel - The skill level (Beginner, Intermediate, Advanced, Expert)
+ * @returns {Promise<Array>} Array of subtopic metadata objects
+ */
+async function generateSubtopicMetadata(moduleTitle, moduleDescription, domain, skillLevel) {
+  console.log(`[GEMINI] Phase 1: Generating subtopic metadata for "${moduleTitle}"`);
+ 
+  const prompt = `You are an expert curriculum designer for ${domain} education.
+ 
+Generate subtopic metadata for the module: "${moduleTitle}"
+Description: ${moduleDescription}
+Skill Level: ${skillLevel}
+ 
+Generate 5-12 subtopics. For each subtopic return ONLY:
+- title (3-8 words)
+- description (1-2 sentences, 15-30 words)
+- importanceLevel: exactly "high", "medium", or "low"
+ 
+Distribution: 2-3 high, 3-5 medium, 1-3 low.
+ 
+Return ONLY a valid JSON array, no markdown, no extra text:
+[
+  {
+    "title": "Subtopic Title",
+    "description": "Brief 1-2 sentence description.",
+    "importanceLevel": "high"
+  }
+]`;
+ 
+  const jsonResponse = await callGeminiJSON(prompt, {
+    temperature: 0.7,
+    maxOutputTokens: 2048,
+  });
+ 
+  const metadata = JSON.parse(jsonResponse);
+ 
+  if (!Array.isArray(metadata)) {
+    throw new Error("Phase 1: response is not an array");
+  }
+ 
+  const valid = metadata
+    .filter(
+      (item) =>
+        item.title &&
+        item.description &&
+        ["high", "medium", "low"].includes(item.importanceLevel)
+    )
+    .map((item) => ({
+      title: item.title.trim(),
+      description: item.description.trim(),
+      importanceLevel: item.importanceLevel,
+    }));
+ 
+  if (valid.length < 5) {
+    throw new Error(`Only ${valid.length} valid subtopics — need at least 5`);
+  }
+ 
+  console.log(`[GEMINI] Phase 1 complete: ${valid.length} subtopics`);
+  return valid;
+}
+
+async function fetchSubtopicExplanation(subtopicTitle, subtopicDescription, importanceLevel, moduleContext, domain) {
+  const { moduleTitle, skillLevel } = moduleContext;
+ 
+  const wordCountRanges = {
+    high:   { min: 800,  max: 1500 },
+    medium: { min: 500,  max: 800  },
+    low:    { min: 300,  max: 500  },
+  };
+  const wc = wordCountRanges[importanceLevel] || wordCountRanges.medium;
+ 
+  const prompt = `You are an expert ${domain} educator writing learning material.
+ 
+Write a detailed explanation for this subtopic:
+Title: "${subtopicTitle}"
+Description: ${subtopicDescription}
+Module: "${moduleTitle}"
+Skill Level: ${skillLevel}
+ 
+REQUIREMENTS:
+- Length: ${wc.min}–${wc.max} words
+- Use markdown: ## headings, bullet points, bold for key terms
+- Sections to include: Overview, Key Concepts, Practical Examples
+- Appropriate for ${skillLevel} learners
+- Do NOT include code blocks here (code will be in a separate section)
+- Return ONLY the markdown text, no JSON, no preamble`;
+ 
+  // responseType: 'text' → no JSON parsing, no chance of parse failure
+  const explanation = await callGeminiText(prompt, {
+    temperature: 0.7,
+    maxOutputTokens: 4096,
+  });
+ 
+  return explanation.trim();
+}
+ 
+/**
+ * Call 2b — Small structured JSON (code examples + key takeaways only)
+ * This JSON is small and safe to parse.
+ */
+async function fetchSubtopicStructuredData(subtopicTitle, moduleContext, domain) {
+  const { moduleTitle, skillLevel } = moduleContext;
+ 
+  const prompt = `You are an expert ${domain} educator.
+ 
+For the subtopic "${subtopicTitle}" in module "${moduleTitle}" at ${skillLevel} level:
+ 
+Return ONLY valid JSON with this exact structure — no markdown, no extra text:
+{
+  "codeExamples": [
+    {
+      "language": "javascript",
+      "code": "// short working code example",
+      "description": "What this demonstrates"
+    }
+  ],
+  "keyTakeaways": [
+    "Key point 1",
+    "Key point 2",
+    "Key point 3"
+  ]
+}
+ 
+Rules:
+- 2-4 code examples relevant to the subtopic (use language appropriate for ${domain})
+- 3-5 key takeaways as short strings
+- Code examples must be short (5-20 lines each)
+- Return ONLY the JSON object`;
+ 
+  const jsonResponse = await callGeminiJSON(prompt, {
+    temperature: 0.5,
+    maxOutputTokens: 2048,
+  });
+ 
+  const data = JSON.parse(jsonResponse);
+ 
+  return {
+    codeExamples: Array.isArray(data.codeExamples) ? data.codeExamples : [],
+    keyTakeaways: Array.isArray(data.keyTakeaways) ? data.keyTakeaways : [],
+  };
+}
+
+
+/**
+ * Phase 2: Generate detailed content for a specific subtopic
+ * @param {string} subtopicTitle - The subtopic title
+ * @param {string} subtopicDescription - The subtopic description
+ * @param {string} importanceLevel - The importance level (high, medium, low)
+ * @param {Object} moduleContext - Context about the module
+ * @param {string} domain - The learning domain
+ * @returns {Promise<Object>} Subtopic content object
+ */
+async function generateSubtopicContent(
+  subtopicTitle,
+  subtopicDescription,
+  importanceLevel,
+  moduleContext,
+  domain
+) {
+  console.log(`[GEMINI] Phase 2: Generating content for "${subtopicTitle}" (${importanceLevel})`);
+ 
+  // Run both calls — explanation is mandatory, structured data is best-effort
+  const [explanation, structuredData] = await Promise.allSettled([
+    fetchSubtopicExplanation(subtopicTitle, subtopicDescription, importanceLevel, moduleContext, domain),
+    fetchSubtopicStructuredData(subtopicTitle, moduleContext, domain),
+  ]);
+ 
+  if (explanation.status === "rejected") {
+    console.error(`[GEMINI] Phase 2 explanation failed: ${explanation.reason}`);
+    throw new Error(`Failed to generate explanation for "${subtopicTitle}": ${explanation.reason}`);
+  }
+ 
+  const explanationText = explanation.value;
+  const { codeExamples, keyTakeaways } =
+    structuredData.status === "fulfilled"
+      ? structuredData.value
+      : { codeExamples: [], keyTakeaways: [] };
+ 
+  if (structuredData.status === "rejected") {
+    console.warn(`[GEMINI] Phase 2 structured data failed (non-fatal): ${structuredData.reason}`);
+  }
+ 
+  const wordCount = explanationText.split(/\s+/).length;
+  console.log(`[GEMINI] Phase 2 complete: ${wordCount} words, ${codeExamples.length} code examples`);
+ 
+  return {
+    // 'content' is what SubComponentViewer renders via dangerouslySetInnerHTML
+    content: explanationText,
+    // Keep the old 'explanation' field for backward compatibility
+    explanation: explanationText,
+    codeExamples,
+    keyTakeaways,
+    // Sections derived from the explanation for backward compat
+    sections: [],
+  };
+}
+
 module.exports = {
   generateQuizQuestions,
   evaluateQuizAnswers,
   generateCodingProblems,
   analyzeCodePerformance,
   analyzeCodeSubmission,
-  suggestApproachForQuestion
+  suggestApproachForQuestion,
+  generateSubtopicMetadata,
+  generateSubtopicContent
 };

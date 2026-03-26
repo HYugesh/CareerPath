@@ -6,7 +6,8 @@ const {
   getRoadmapById,
   updateRoadmapProgress,
   deleteRoadmap,
-  hydrateModule
+  hydrateModule,
+  generateSubtopicContent
 } = require('../controllers/roadmapController');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -142,14 +143,17 @@ router.get('/', getUserRoadmaps);
 // POST /api/roadmaps - Create new roadmap from requirements
 router.post('/', createRoadmap);
 
+// POST /api/roadmaps/:id/modules/:moduleId/hydrate - Hydrate module content (Phase 1)
+router.post('/:id/modules/:moduleId/hydrate', hydrateModule);
+
+// POST /api/roadmaps/:id/modules/:moduleId/subtopics/:subtopicId/generate-content - Generate subtopic content (Phase 2)
+router.post('/:id/modules/:moduleId/subtopics/:subtopicId/generate-content', generateSubtopicContent);
+
 // GET /api/roadmaps/:id - Get specific roadmap
 router.get('/:id', getRoadmapById);
 
 // PUT /api/roadmaps/:id - Update roadmap progress
 router.put('/:id', updateRoadmapProgress);
-
-// POST /api/roadmaps/:id/modules/:moduleId/hydrate - Hydrate module content
-router.post('/:id/modules/:moduleId/hydrate', hydrateModule);
 
 // DELETE /api/roadmaps/:id - Delete roadmap
 router.delete('/:id', deleteRoadmap);

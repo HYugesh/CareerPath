@@ -402,7 +402,7 @@ function calculateDuration(hoursPerWeek, deadline, totalHours) {
   return '3-6 months';
 }
 
-// Hydrate a specific module with content (Phase 2)
+// Phase 1: Hydrate a specific module with subtopic metadata only (titles, descriptions, importance)
 const hydrateModule = async (req, res) => {
   try {
     const { id, moduleId } = req.params;
@@ -427,40 +427,65 @@ const hydrateModule = async (req, res) => {
 
     const module = roadmap.modules[moduleIndex];
 
-    // 3. Check if already hydrated
+    // 3. Check if already hydrated (has subtopics with metadata)
     if (module.subComponents && module.subComponents.length > 0) {
-      console.log('✅ Module already hydrated, returning existing content.');
+      console.log('✅ Module already hydrated, returning existing metadata.');
       return res.status(200).json({
         success: true,
         data: module.subComponents
       });
     }
 
-    // 4. Generate Content (Phase 2 Call)
-    console.log(`💧 hydration triggered for Module ${moduleId}: ${module.title}`);
-    const { generateAdaptiveModuleContent } = require('../services/subComponentGenerationService');
+    // 4. Generate Phase 1: Metadata Only (titles, descriptions, importance levels)
+    console.log(`💧 Phase 1 hydration triggered for Module ${moduleId}: ${module.title}`);
+    const { generateSubtopicMetadata } = require('../services/geminiService');
+    const { retryWithBackoff } = require('../utils/retryHelper');
+    const { validateAndParseJSON } = require('../utils/jsonValidator');
 
-    // Get future topics to prevent contamination
-    const futureModules = roadmap.modules.filter(m => m.moduleId > parseInt(moduleId));
-    const futureTopics = futureModules.map(m => m.title).slice(0, 5); // Take next 5 modules as context
+    const moduleTitle = module.title;
+    const moduleDescription = module.description || module.objective || '';
+    const domain = roadmap.primaryDomain || 'General';
+    const skillLevel = moduleContext?.skillLevel || roadmap.skillLevel || 'Intermediate';
 
-    // Ensure domain and additional context is passed correctly
-    const contextWithDomain = {
-      ...moduleContext,
-      domain: roadmap.primaryDomain,
-      moduleObjective: module.objective || module.description || '',
-      futureTopics: futureTopics
-    };
-
-    const newContent = await generateAdaptiveModuleContent(
-      contextWithDomain,
-      adaptiveMetadata,
-      scalingConfig
+    // Retry logic for metadata generation
+    const metadata = await retryWithBackoff(
+      async () => {
+        return await generateSubtopicMetadata(
+          moduleTitle,
+          moduleDescription,
+          domain,
+          skillLevel
+        );
+      },
+      {
+        maxRetries: 2,
+        initialDelay: 1000,
+        context: `Phase 1 metadata generation for ${moduleTitle}`,
+        shouldRetry: (error) => {
+          // Retry on JSON parsing errors or AI service errors
+          return error.message.includes('JSON') || 
+                 error.message.includes('parse') ||
+                 error.message.includes('AI');
+        }
+      }
     );
 
-    // 5. Save to DB using atomic update to prevent VersionError
+    // 5. Transform metadata to subComponents format (without content)
+    const subComponents = metadata.map((item, index) => ({
+      subComponentId: index + 1,
+      title: item.title,
+      description: item.description,
+      importanceLevel: item.importanceLevel,
+      status: 'NOT_STARTED',
+      hasQuiz: false,
+      quizzes: [],
+      content: null, // Phase 2 will populate this
+      learningContent: null // Phase 2 will populate this
+    }));
+
+    // 6. Save to DB using atomic update to prevent VersionError
     const updateFields = {
-      "modules.$.subComponents": newContent
+      "modules.$.subComponents": subComponents
     };
 
     // Auto-start module if it was just visited
@@ -481,22 +506,203 @@ const hydrateModule = async (req, res) => {
     );
 
     if (!updatedRoadmap) {
-      throw new Error('Failed to save hydrated content: Roadmap modified concurrently');
+      throw new Error('Failed to save hydrated metadata: Roadmap modified concurrently');
     }
 
-    console.log(`✅ Hydration success. Generated ${newContent.length} sub-topics.`);
+    console.log(`✅ Phase 1 hydration success. Generated ${subComponents.length} subtopic metadata items.`);
 
     res.status(200).json({
       success: true,
-      message: 'Module hydrated successfully',
-      data: newContent
+      message: 'Module metadata hydrated successfully',
+      data: subComponents,
+      phase: 'metadata'
     });
 
   } catch (error) {
-    console.error('❌ Hydration error:', error);
+    console.error('❌ Phase 1 hydration error:', error);
+    
+    // Log raw response if available (for JSON parsing failures)
+    if (error.rawResponse) {
+      console.error('❌ Raw Gemini response that failed to parse:', error.rawResponse);
+    }
+    
+    // Return structured error response with descriptive message
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to hydrate module'
+      message: error.message || 'Failed to hydrate module metadata',
+      error: {
+        type: error.name || 'HydrationError',
+        context: error.context || 'Phase 1 metadata generation',
+        details: error.parseError?.message || error.message,
+        // Include indication if this was a JSON parsing failure
+        ...(error.rawResponse && { parseFailure: true })
+      }
+    });
+  }
+};
+
+// Phase 2: Generate detailed content for a specific subtopic on-demand
+const generateSubtopicContent = async (req, res) => {
+  try {
+    const { id, moduleId, subtopicId } = req.params;
+    const userId = req.user.id;
+
+    console.log(`💧 Phase 2: Content generation requested for subtopic ${subtopicId} in module ${moduleId}`);
+
+    // 1. Find the roadmap
+    const roadmap = await Roadmap.findOne({ _id: id, userId });
+    if (!roadmap) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Roadmap not found' 
+      });
+    }
+
+    // 2. Find the module
+    const moduleIndex = roadmap.modules.findIndex(m => m.moduleId === parseInt(moduleId));
+    if (moduleIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Module not found' 
+      });
+    }
+
+    const module = roadmap.modules[moduleIndex];
+
+    // 3. Find the subtopic
+    if (!module.subComponents || module.subComponents.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No subtopics found. Please hydrate the module first.' 
+      });
+    }
+
+    const subtopicIndex = module.subComponents.findIndex(
+      sc => sc.subComponentId === parseInt(subtopicId)
+    );
+
+    if (subtopicIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Subtopic not found' 
+      });
+    }
+
+    const subtopic = module.subComponents[subtopicIndex];
+
+    // 4. Check if content already exists (return cached if available)
+    if (subtopic.content || (subtopic.learningContent && subtopic.learningContent.explanation)) {
+      console.log(`✅ Content already exists for subtopic "${subtopic.title}", returning cached version.`);
+      return res.status(200).json({
+        success: true,
+        data: subtopic,
+        cached: true
+      });
+    }
+
+    // 5. Generate Phase 2: Detailed Content
+    console.log(`🤖 Generating detailed content for subtopic: "${subtopic.title}"`);
+    
+    const { generateSubtopicContent: generateContent } = require('../services/geminiService');
+    const { retryWithBackoff } = require('../utils/retryHelper');
+
+    const subtopicTitle = subtopic.title;
+    const subtopicDescription = subtopic.description || '';
+    const importanceLevel = subtopic.importanceLevel || 'medium';
+    const moduleContext = {
+      moduleTitle: module.title,
+      skillLevel: roadmap.currentSkillLevel || 'Intermediate'
+    };
+    const domain = roadmap.primaryDomain || 'General';
+
+    // Retry logic for content generation
+    const contentData = await retryWithBackoff(
+      async () => {
+        return await generateContent(
+          subtopicTitle,
+          subtopicDescription,
+          importanceLevel,
+          moduleContext,
+          domain
+        );
+      },
+      {
+        maxRetries: 2,
+        initialDelay: 1000,
+        context: `Phase 2 content generation for "${subtopicTitle}"`,
+        shouldRetry: (error) => {
+          // Retry on JSON parsing errors or AI service errors
+          return error.message.includes('JSON') || 
+                 error.message.includes('parse') ||
+                 error.message.includes('AI');
+        }
+      }
+    );
+
+    // 6. Validate JSON response before storing
+    if (!contentData || !contentData.content) {
+      throw new Error('Invalid content data received - missing content field');
+    }
+
+    // 7. Update subtopic content field in database using atomic update
+    const updatePath = `modules.${moduleIndex}.subComponents.${subtopicIndex}`;
+    
+    const updatedRoadmap = await Roadmap.findOneAndUpdate(
+      {
+        _id: id,
+        userId,
+        "modules.moduleId": parseInt(moduleId)
+      },
+      {
+        $set: {
+          [`${updatePath}.content`]: contentData.content,
+          [`${updatePath}.learningContent`]: {
+            explanation: contentData.content,
+            codeExamples: contentData.codeExamples || [],
+            keyTakeaways: contentData.keyTakeaways || [],
+            commonMistakes: []
+          },
+          [`${updatePath}.status`]: 'IN_PROGRESS'
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedRoadmap) {
+      throw new Error('Failed to save subtopic content: Roadmap modified concurrently');
+    }
+
+    // 8. Return single subtopic object with full content
+    const updatedSubtopic = updatedRoadmap.modules[moduleIndex].subComponents[subtopicIndex];
+
+    console.log(`✅ Phase 2 complete: Content generated and saved for "${subtopicTitle}"`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Subtopic content generated successfully',
+      data: updatedSubtopic,
+      phase: 'content'
+    });
+
+  } catch (error) {
+    console.error('❌ Phase 2 content generation error:', error);
+    
+    // Log raw response if available (for JSON parsing failures)
+    if (error.rawResponse) {
+      console.error('❌ Raw Gemini response that failed to parse:', error.rawResponse);
+    }
+    
+    // Return structured error response with descriptive message
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate subtopic content',
+      error: {
+        type: error.name || 'ContentGenerationError',
+        context: error.context || 'Phase 2 content generation',
+        details: error.parseError?.message || error.message,
+        // Include indication if this was a JSON parsing failure
+        ...(error.rawResponse && { parseFailure: true })
+      }
     });
   }
 };
@@ -507,5 +713,6 @@ module.exports = {
   getRoadmapById,
   updateRoadmapProgress,
   deleteRoadmap,
-  hydrateModule
+  hydrateModule,
+  generateSubtopicContent
 };

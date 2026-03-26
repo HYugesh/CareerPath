@@ -187,7 +187,7 @@ const FormattedText = ({ text }: { text: string }) => {
     <div className="space-y-2">
       {lines.map((line, index) => {
         const trimmedLine = line.trim();
-        
+
         // Check for numbered list (1. 2. 3. etc.)
         const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
         if (numberedMatch) {
@@ -259,6 +259,7 @@ interface QuestionHistory {
   difficulty: Difficulty;
   count: number;
   questions: Question[];
+  sessionId: string;
 }
 
 // Get question history from localStorage
@@ -272,7 +273,7 @@ const getQuestionHistory = (): QuestionHistory[] => {
 };
 
 // Save questions to history
-const saveToHistory = (topic: string, difficulty: Difficulty, count: number, questions: Question[]) => {
+const saveToHistory = (topic: string, difficulty: Difficulty, count: number, questions: Question[], sessionId: string) => {
   const history = getQuestionHistory();
   const newEntry: QuestionHistory = {
     id: Date.now().toString(),
@@ -280,7 +281,8 @@ const saveToHistory = (topic: string, difficulty: Difficulty, count: number, que
     topic,
     difficulty,
     count,
-    questions
+    questions,
+    sessionId
   };
 
   history.unshift(newEntry);
@@ -294,11 +296,11 @@ const extractFunctionName = (code: string): string => {
   // JavaScript: function functionName(...)
   const jsMatch = code.match(/function\s+(\w+)/);
   if (jsMatch) return jsMatch[1];
-  
+
   // Python: def function_name(...)
   const pyMatch = code.match(/def\s+(\w+)/);
   if (pyMatch) return pyMatch[1];
-  
+
   // Default fallback
   return 'solution';
 };
@@ -343,7 +345,7 @@ const GeminiCodeArena = () => {
   // Panel visibility state for desktop
   const [problemPanelVisible, setProblemPanelVisible] = useState<boolean>(true);
   const [resultsPanelVisible, setResultsPanelVisible] = useState<boolean>(true);
-  
+
   // Panel width state for resizing
   const [problemPanelWidth, setProblemPanelWidth] = useState<number>(15); // percentage - reduced for more editor space
   const [resultsPanelWidth, setResultsPanelWidth] = useState<number>(50); // percentage - increased for bigger editor
@@ -359,17 +361,17 @@ const GeminiCodeArena = () => {
 
   // Custom Input State
   const [customInput, setCustomInput] = useState<string>("");
-  
+
   // Test Cases Tab State
   const [testCasesTab, setTestCasesTab] = useState<"cases" | "results" | "custom">("cases");
   const [selectedTestCaseIndex, setSelectedTestCaseIndex] = useState<number>(0);
-  
+
   // Submission View State
   const [showSubmittedCode, setShowSubmittedCode] = useState<boolean>(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState<boolean>(false);
   const [expandedSubmissionId, setExpandedSubmissionId] = useState<string | null>(null);
-  
+
   // Test Cases Panel Height State (for vertical resizing)
   const [testCasesPanelHeight, setTestCasesPanelHeight] = useState<number>(35); // percentage
   const [isResizingTestCases, setIsResizingTestCases] = useState<boolean>(false);
@@ -380,9 +382,14 @@ const GeminiCodeArena = () => {
 
   // Session tracking for analysis
   const [sessionData, setSessionData] = useState<{
+    sessionId: string;
     startTime: number;
     attempts: { questionId: number; code: string; results: ExecutionResult[]; timestamp: number }[];
-  }>({ startTime: Date.now(), attempts: [] });
+  }>({ 
+    sessionId: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9), 
+    startTime: Date.now(), 
+    attempts: [] 
+  });
 
   // History State
   const [questionHistory, setQuestionHistory] = useState<QuestionHistory[]>([]);
@@ -591,7 +598,7 @@ const GeminiCodeArena = () => {
     if (view === "coding" && isFullscreen) {
       setShowFullscreenNotification(true);
       setTimeout(() => setShowFullscreenNotification(false), 3000);
-      
+
       // Hide the main navbar
       document.body.classList.add('fullscreen-coding-mode');
       const navbar = document.querySelector('nav') ||
@@ -768,7 +775,15 @@ const GeminiCodeArena = () => {
 
         if (matchingHistory) {
           setQuestions(matchingHistory.questions);
-          
+
+          // IMPORTANT: Reuse the original sessionId from history
+          // For old history entries without sessionId, generate a new one
+          setSessionData({ 
+            sessionId: matchingHistory.sessionId || (Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9)),
+            startTime: Date.now(), 
+            attempts: [] 
+          });
+
           // Load saved code for the first question if available
           const firstQuestion = matchingHistory.questions[0];
           const savedCode = loadCodeForQuestion(firstQuestion.id);
@@ -776,7 +791,7 @@ const GeminiCodeArena = () => {
           setCurrentQIndex(0);
           setResults(null);
           setTestResults(null);
-          
+
           // Show fullscreen permission page after loading questions
           setView("fullscreen-permission");
           setLoading(false);
@@ -792,7 +807,7 @@ const GeminiCodeArena = () => {
       // "New" mode - generate fresh questions
       // Clear previously saved codes when starting NEW session
       clearSavedCodes();
-      
+
       console.log("Generating new questions via backend API:", { selectedTopic, difficulty, count });
 
       // Call backend API to generate questions (without language)
@@ -807,8 +822,8 @@ const GeminiCodeArena = () => {
       if (generatedQuestions && generatedQuestions.length > 0) {
         console.log(`Successfully received ${generatedQuestions.length} questions from backend`);
 
-        // Save to history (only for "New" mode, without language)
-        saveToHistory(selectedTopic, difficulty, count, generatedQuestions);
+        // Save to history (only for "New" mode) with current sessionId
+        saveToHistory(selectedTopic, difficulty, count, generatedQuestions, sessionData.sessionId);
         setQuestionHistory(getQuestionHistory());
 
         setQuestions(generatedQuestions);
@@ -818,7 +833,7 @@ const GeminiCodeArena = () => {
         setCurrentQIndex(0);
         setResults(null);
         setTestResults(null);
-        
+
         // Show fullscreen permission page after questions are generated
         setView("fullscreen-permission");
       } else {
@@ -836,14 +851,15 @@ const GeminiCodeArena = () => {
 
   const proceedWithFullscreen = async () => {
     // Questions are already loaded at this point
+    // sessionId is already set (either from generateQuestions or history load)
     // Just request fullscreen and enter coding mode
-    
+
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
         setIsFullscreen(true);
         console.log("✓ Fullscreen access granted - entering coding mode");
-        
+
         // Load saved code for the first question if available (only for active sessions)
         const firstQuestion = questions[0];
         if (firstQuestion && questionMode === "New") {
@@ -857,11 +873,9 @@ const GeminiCodeArena = () => {
           setUserCode('');
           await fetchSubmissionsForQuestion(firstQuestion.id);
         }
-        
-        // Enter coding view
+
+        // Enter coding view (sessionId already set, don't override it)
         setView("coding");
-        // Reset session data
-        setSessionData({ startTime: Date.now(), attempts: [] });
       }
     } catch (fullscreenError) {
       console.error("Fullscreen request failed:", fullscreenError);
@@ -883,7 +897,7 @@ const GeminiCodeArena = () => {
 
     // Determine execution mode based on custom input
     const isCustomMode = customInput.trim().length > 0;
-    
+
     // Switch to appropriate tab based on mode
     if (isCustomMode) {
       setTestCasesTab("custom");
@@ -921,7 +935,7 @@ const GeminiCodeArena = () => {
       // Update testResults state with response
       if (response.data.success) {
         setTestResults(response.data);
-        
+
         // Track this attempt for performance analysis
         const executionResults: ExecutionResult[] = response.data.results.map((result: TestResult, index: number) => ({
           testCaseIndex: index,
@@ -931,7 +945,7 @@ const GeminiCodeArena = () => {
           errorDetail: result.error,
           isHidden: result.isHidden || false
         }));
-        
+
         setSessionData(prev => ({
           ...prev,
           attempts: [...prev.attempts, {
@@ -1017,21 +1031,21 @@ const GeminiCodeArena = () => {
 
     // Disable Submit button and set loading state
     setIsSubmitting(true);
-    
+
     // Switch to submissions tab in middle panel
     setMiddleTab("results");
-    
+
     // Switch to results tab on mobile
     if (isMobile) {
       setActiveTab('results');
     }
-    
+
     const currentQuestion = questions[currentQIndex];
-    
+
     try {
       // Combine publicTestCases and privateTestCases
       const allTestCases = currentQuestion.testCases;
-      
+
       // Send POST request to /code/submit with code, language, problemId, all testCases
       const response = await axios.post('/code/submit', {
         code: userCode,
@@ -1040,16 +1054,17 @@ const GeminiCodeArena = () => {
         questionTitle: currentQuestion.title,
         topic: selectedTopic,
         difficulty: difficulty,
-        testCases: allTestCases
+        testCases: allTestCases,
+        sessionId: sessionData.sessionId
       });
-      
+
       if (response.data.success) {
         // Store the submission results to display in UI
         setTestResults(response.data);
-        
+
         // Fetch updated submissions list from database
         await fetchSubmissionsForQuestion(currentQuestion.id);
-        
+
         // Track this attempt for performance analysis
         const executionResults: ExecutionResult[] = response.data.results.map((result: TestResult, index: number) => ({
           testCaseIndex: index,
@@ -1059,7 +1074,7 @@ const GeminiCodeArena = () => {
           errorDetail: result.error,
           isHidden: result.isHidden || false
         }));
-        
+
         setSessionData(prev => ({
           ...prev,
           attempts: [...prev.attempts, {
@@ -1070,7 +1085,7 @@ const GeminiCodeArena = () => {
           }]
         }));
       }
-      
+
     } catch (error) {
       console.error("Submit code failed:", error);
       // Handle errors by showing error in test results
@@ -1283,7 +1298,7 @@ const GeminiCodeArena = () => {
   const fetchSubmissionsForQuestion = async (questionId: number) => {
     setLoadingSubmissions(true);
     try {
-      const response = await axios.get('/code/submissions');
+      const response = await axios.get(`/code/submissions?sessionId=${sessionData.sessionId}`);
       if (response.data.success) {
         // Filter submissions for the current question
         const questionSubmissions = response.data.submissions.filter(
@@ -1325,15 +1340,15 @@ const GeminiCodeArena = () => {
       }
 
       setCurrentQIndex(newIndex);
-      
+
       // Load saved code for the new question
       const newQuestion = questions[newIndex];
       const savedCode = loadCodeForQuestion(newQuestion.id);
-      
+
       // Use saved code if available, otherwise use starter code
       const codeToLoad = savedCode || generateStarterCode(language, newQuestion?.title || "");
       setUserCode(codeToLoad);
-      
+
       setResults(null);
       // Clear test results when changing questions
       setTestResults(null);
@@ -1664,18 +1679,27 @@ const GeminiCodeArena = () => {
                         setSelectedTopic(entry.topic);
                         setDifficulty(entry.difficulty);
                         setCount(entry.count);
-                        
+
                         // Clear editor - don't load saved code for previous sessions
                         setUserCode('');
                         setCurrentQIndex(0);
                         setResults(null);
                         setTestResults(null);
-                        
-                        // Fetch submissions for the first question
+
+                        // IMPORTANT: Reuse the original sessionId from history
+                        // This allows fetching submissions from the original session
+                        // For old history entries without sessionId, generate a new one
+                        setSessionData({ 
+                          sessionId: entry.sessionId || (Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9)),
+                          startTime: Date.now(), 
+                          attempts: [] 
+                        });
+
+                        // Fetch submissions for the first question using the original sessionId
                         if (entry.questions[0]) {
                           await fetchSubmissionsForQuestion(entry.questions[0].id);
                         }
-                        
+
                         // Request fullscreen before entering coding mode
                         try {
                           if (document.documentElement.requestFullscreen) {
@@ -1683,16 +1707,12 @@ const GeminiCodeArena = () => {
                             setIsFullscreen(true);
                             console.log("✓ Fullscreen access granted - entering coding mode from history");
                             setView("coding");
-                            // Reset session data
-                            setSessionData({ startTime: Date.now(), attempts: [] });
                           }
                         } catch (fullscreenError) {
                           console.error("Fullscreen request failed:", fullscreenError);
                           // If fullscreen fails, still allow entering coding mode
                           alert("Fullscreen access was denied. You can still code, but for the best experience, please allow fullscreen access.");
                           setView("coding");
-                          // Reset session data
-                          setSessionData({ startTime: Date.now(), attempts: [] });
                         }
                       }}
                       className="px-4 py-2 bg-[#2563EB] hover:bg-[#4d51e0] text-white rounded-lg text-sm font-medium transition-colors"
@@ -1892,25 +1912,22 @@ const GeminiCodeArena = () => {
                         const savedCode = loadCodeForQuestion(q.id);
                         setUserCode(savedCode || generateStarterCode(language, q.title));
                         setTestResults(null);
-                        
+
                         // Fetch submissions for this question
                         await fetchSubmissionsForQuestion(q.id);
                       }}
-                      className={`w-full text-left px-3 py-2.5 border-b border-[#3E3E42] transition-colors ${
-                        currentQIndex === index
-                          ? 'bg-[#2D2D30] border-l-2 border-l-[#3B82F6]'
-                          : 'hover:bg-[#252526]'
-                      }`}
+                      className={`w-full text-left px-3 py-2.5 border-b border-[#3E3E42] transition-colors ${currentQIndex === index
+                        ? 'bg-[#2D2D30] border-l-2 border-l-[#3B82F6]'
+                        : 'hover:bg-[#252526]'
+                        }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-semibold ${
-                          currentQIndex === index ? 'text-[#3B82F6]' : 'text-slate-500'
-                        }`}>
+                        <span className={`text-xs font-semibold ${currentQIndex === index ? 'text-[#3B82F6]' : 'text-slate-500'
+                          }`}>
                           {index + 1}.
                         </span>
-                        <span className={`text-sm font-medium ${
-                          currentQIndex === index ? 'text-white' : 'text-slate-300'
-                        }`}>
+                        <span className={`text-sm font-medium ${currentQIndex === index ? 'text-white' : 'text-slate-300'
+                          }`}>
                           {q.title}
                         </span>
                       </div>
@@ -1937,10 +1954,10 @@ const GeminiCodeArena = () => {
           )}
 
           {/* Center Panel - Problem Description */}
-          <div 
-            style={{ 
-              width: `${100 - (problemPanelVisible ? problemPanelWidth : 0) - (resultsPanelVisible ? resultsPanelWidth : 0)}%` 
-            }} 
+          <div
+            style={{
+              width: `${100 - (problemPanelVisible ? problemPanelWidth : 0) - (resultsPanelVisible ? resultsPanelWidth : 0)}%`
+            }}
             className="bg-[#1E1E1E] flex flex-col overflow-hidden"
           >
 
@@ -1948,21 +1965,19 @@ const GeminiCodeArena = () => {
             <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
               <button
                 onClick={() => setMiddleTab("problem")}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                  middleTab === "problem"
-                    ? 'text-white border-b-2 border-[#3B82F6]'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${middleTab === "problem"
+                  ? 'text-white border-b-2 border-[#3B82F6]'
+                  : 'text-slate-400 hover:text-slate-300'
+                  }`}
               >
                 Description
               </button>
               <button
                 onClick={() => setMiddleTab("results")}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                  middleTab === "results"
-                    ? 'text-white border-b-2 border-[#3B82F6]'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${middleTab === "results"
+                  ? 'text-white border-b-2 border-[#3B82F6]'
+                  : 'text-slate-400 hover:text-slate-300'
+                  }`}
               >
                 Submissions
               </button>
@@ -2033,7 +2048,7 @@ const GeminiCodeArena = () => {
               {middleTab === "results" && (
                 <div className="space-y-6">
                   <h3 className="text-xl font-bold text-white">Submissions</h3>
-                  
+
                   {loadingSubmissions ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-[#3B82F6]" />
@@ -2052,16 +2067,15 @@ const GeminiCodeArena = () => {
                                 {new Date(submission.submittedAt).toLocaleString()}
                               </span>
                             </div>
-                            
+
                             {/* Summary Stats */}
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <span className="text-xs text-slate-400">Test Cases Passed:</span>
-                                <div className={`text-lg font-bold mt-1 ${
-                                  submission.testResults.passed === submission.testResults.total
-                                    ? 'text-green-400'
-                                    : 'text-yellow-400'
-                                }`}>
+                                <div className={`text-lg font-bold mt-1 ${submission.testResults.passed === submission.testResults.total
+                                  ? 'text-green-400'
+                                  : 'text-yellow-400'
+                                  }`}>
                                   {submission.testResults.passed} / {submission.testResults.total}
                                 </div>
                               </div>
@@ -2112,11 +2126,10 @@ const GeminiCodeArena = () => {
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <span className="text-slate-300 text-lg">Test Cases Passed:</span>
-                            <span className={`font-bold text-2xl ${
-                              testResults.summary.passed === testResults.summary.total
-                                ? 'text-green-400'
-                                : 'text-yellow-400'
-                            }`}>
+                            <span className={`font-bold text-2xl ${testResults.summary.passed === testResults.summary.total
+                              ? 'text-green-400'
+                              : 'text-yellow-400'
+                              }`}>
                               {testResults.summary.passed} / {testResults.summary.total}
                             </span>
                           </div>
@@ -2186,18 +2199,17 @@ const GeminiCodeArena = () => {
                         <span>{language}</span>
                         <ChevronDown className="w-3 h-3" />
                       </button>
-                      
+
                       {showLanguageDropdown && (
                         <div className="absolute top-full left-0 mt-1 bg-[#252526] border border-[#3E3E42] rounded-lg shadow-xl z-[300] min-w-[140px] max-h-[300px] overflow-y-auto">
                           {(["JavaScript", "Python", "Java", "C++", "C", "C#", "Ruby", "Go", "Rust", "PHP", "TypeScript", "Kotlin", "R"] as Language[]).map((lang) => (
                             <button
                               key={lang}
                               onClick={() => handleLanguageChange(lang)}
-                              className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                                language === lang
-                                  ? "text-white"
-                                  : "text-slate-300 hover:bg-[#3E3E42]"
-                              }`}
+                              className={`w-full text-left px-3 py-2 text-xs transition-colors ${language === lang
+                                ? "text-white"
+                                : "text-slate-300 hover:bg-[#3E3E42]"
+                                }`}
                               style={language === lang ? { background: 'linear-gradient(90deg, #5B21B6 0%, #3B82F6 100%)' } : {}}
                             >
                               {lang}
@@ -2206,7 +2218,7 @@ const GeminiCodeArena = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleRunCode}
@@ -2264,31 +2276,28 @@ const GeminiCodeArena = () => {
                   <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
                     <button
                       onClick={() => setTestCasesTab("cases")}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                        testCasesTab === "cases"
-                          ? "text-white border-b-2 border-[#3B82F6]"
-                          : "text-slate-400 hover:text-slate-300"
-                      }`}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "cases"
+                        ? "text-white border-b-2 border-[#3B82F6]"
+                        : "text-slate-400 hover:text-slate-300"
+                        }`}
                     >
                       Test Cases
                     </button>
                     <button
                       onClick={() => setTestCasesTab("results")}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                        testCasesTab === "results"
-                          ? "text-white border-b-2 border-[#3B82F6]"
-                          : "text-slate-400 hover:text-slate-300"
-                      }`}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "results"
+                        ? "text-white border-b-2 border-[#3B82F6]"
+                        : "text-slate-400 hover:text-slate-300"
+                        }`}
                     >
                       Test Results
                     </button>
                     <button
                       onClick={() => setTestCasesTab("custom")}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                        testCasesTab === "custom"
-                          ? "text-white border-b-2 border-[#3B82F6]"
-                          : "text-slate-400 hover:text-slate-300"
-                      }`}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "custom"
+                        ? "text-white border-b-2 border-[#3B82F6]"
+                        : "text-slate-400 hover:text-slate-300"
+                        }`}
                     >
                       Input / Output
                     </button>
@@ -2305,17 +2314,16 @@ const GeminiCodeArena = () => {
                             <button
                               key={index}
                               onClick={() => setSelectedTestCaseIndex(index)}
-                              className={`w-full px-3 py-2 text-xs font-semibold rounded transition-colors text-left ${
-                                selectedTestCaseIndex === index
-                                  ? "bg-white text-black"
-                                  : "bg-[#1E1E1E] text-slate-300 hover:bg-[#2D2D30]"
-                              }`}
+                              className={`w-full px-3 py-2 text-xs font-semibold rounded transition-colors text-left ${selectedTestCaseIndex === index
+                                ? "bg-white text-black"
+                                : "bg-[#1E1E1E] text-slate-300 hover:bg-[#2D2D30]"
+                                }`}
                             >
                               Case {index + 1}
                             </button>
                           ))}
                         </div>
-                        
+
                         {/* Test Case Details */}
                         <div className="flex-1 p-4 overflow-y-auto space-y-4">
                           {currentQuestion?.examples?.[selectedTestCaseIndex] && (
@@ -2351,11 +2359,10 @@ const GeminiCodeArena = () => {
                             <div className="bg-[#252526] rounded-lg p-4 border border-[#3E3E42]">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm text-slate-300">Test Cases Passed:</span>
-                                <span className={`font-bold ${
-                                  testResults.summary.passed === testResults.summary.total
-                                    ? 'text-green-400'
-                                    : 'text-yellow-400'
-                                }`}>
+                                <span className={`font-bold ${testResults.summary.passed === testResults.summary.total
+                                  ? 'text-green-400'
+                                  : 'text-yellow-400'
+                                  }`}>
                                   {testResults.summary.passed} / {testResults.summary.total}
                                 </span>
                               </div>
@@ -2371,11 +2378,10 @@ const GeminiCodeArena = () => {
                             {testResults.results.map((result, index) => (
                               <div
                                 key={index}
-                                className={`bg-[#252526] rounded-lg p-4 border ${
-                                  result.passed
-                                    ? 'border-green-500/30'
-                                    : 'border-red-500/30'
-                                }`}
+                                className={`bg-[#252526] rounded-lg p-4 border ${result.passed
+                                  ? 'border-green-500/30'
+                                  : 'border-red-500/30'
+                                  }`}
                               >
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-sm font-semibold text-slate-300">
@@ -2413,7 +2419,7 @@ const GeminiCodeArena = () => {
                               Custom Input
                             </label>
                             {customInput && (
-                              <button 
+                              <button
                                 onClick={() => setCustomInput("")}
                                 className="hover:bg-[#3E3E42] p-1 rounded transition-colors"
                               >
@@ -2428,7 +2434,7 @@ const GeminiCodeArena = () => {
                             placeholder="Enter your custom test input here..."
                           />
                         </div>
-                        
+
                         {testResults && testResults.isCustomMode && (
                           <div>
                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
@@ -2486,7 +2492,11 @@ const GeminiCodeArena = () => {
                 setResults(null);
                 setCustomResults(null);
                 setPerformanceAnalysis(null);
-                setSessionData({ startTime: Date.now(), attempts: [] });
+                setSessionData({ 
+                  sessionId: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+                  startTime: Date.now(), 
+                  attempts: [] 
+                });
                 setShowCustomTests(false);
                 setCustomTestCases([]);
               }}
@@ -2579,11 +2589,10 @@ const GeminiCodeArena = () => {
                   </h2>
                   <div className="space-y-6">
                     {performanceAnalysis.questionAnalysis.map((qa, index) => (
-                      <div key={qa.questionId} className={`border rounded-xl p-5 ${
-                        qa.attempted === false 
-                          ? 'bg-orange-900/20 border-orange-700/50' 
-                          : 'bg-slate-800/50 border-slate-700'
-                      }`}>
+                      <div key={qa.questionId} className={`border rounded-xl p-5 ${qa.attempted === false
+                        ? 'bg-orange-900/20 border-orange-700/50'
+                        : 'bg-slate-800/50 border-slate-700'
+                        }`}>
                         {/* Question Header */}
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
@@ -2596,11 +2605,10 @@ const GeminiCodeArena = () => {
                                   Not Attempted
                                 </div>
                               ) : (
-                                <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                  qa.rating >= 8 ? 'bg-green-500/20 text-green-400' :
+                                <div className={`px-3 py-1 rounded-full text-xs font-bold ${qa.rating >= 8 ? 'bg-green-500/20 text-green-400' :
                                   qa.rating >= 6 ? 'bg-yellow-500/20 text-yellow-400' :
-                                  'bg-red-500/20 text-red-400'
-                                }`}>
+                                    'bg-red-500/20 text-red-400'
+                                  }`}>
                                   {qa.rating}/10
                                 </div>
                               )}
@@ -2723,7 +2731,7 @@ const GeminiCodeArena = () => {
                     </div>
                     <div className="text-xs text-slate-400">Minutes</div>
                   </div>
-                  
+
                   {/* Questions Attempted */}
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-400 mb-1">
@@ -2731,7 +2739,7 @@ const GeminiCodeArena = () => {
                     </div>
                     <div className="text-xs text-slate-400">Attempted</div>
                   </div>
-                  
+
                   {/* Code Submissions */}
                   <div className="text-center">
                     <div className="text-2xl font-bold text-orange-400 mb-1">
@@ -2739,7 +2747,7 @@ const GeminiCodeArena = () => {
                     </div>
                     <div className="text-xs text-slate-400">Submissions</div>
                   </div>
-                  
+
                   {/* Tests Passed */}
                   <div className="text-center">
                     <div className="text-2xl font-bold text-emerald-400 mb-1">
@@ -2747,20 +2755,19 @@ const GeminiCodeArena = () => {
                     </div>
                     <div className="text-xs text-slate-400">Tests Passed</div>
                   </div>
-                  
+
                   {/* Success Rate */}
                   <div className="text-center">
-                    <div className={`text-2xl font-bold mb-1 ${
-                      (performanceAnalysis.sessionMetadata?.successRate || 0) >= 80 ? 'text-green-400' :
+                    <div className={`text-2xl font-bold mb-1 ${(performanceAnalysis.sessionMetadata?.successRate || 0) >= 80 ? 'text-green-400' :
                       (performanceAnalysis.sessionMetadata?.successRate || 0) >= 60 ? 'text-yellow-400' :
-                      'text-red-400'
-                    }`}>
+                        'text-red-400'
+                      }`}>
                       {performanceAnalysis.sessionMetadata?.successRate || 0}%
                     </div>
                     <div className="text-xs text-slate-400">Success Rate</div>
                   </div>
                 </div>
-                
+
                 {/* Additional Stats Row */}
                 <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-700">
                   <div className="text-center">

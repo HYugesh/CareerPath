@@ -198,16 +198,22 @@ export default function RoadmapDetail() {
     }
   };
 
-  const [hydratingModules, setHydratingModules] = useState({});
+  const [isLoadingMetadata, setIsLoadingMetadata] = useState({});
+  const [metadataError, setMetadataError] = useState({});
 
-  // Hydrate module content
+  // Hydrate module content (Phase 1: Metadata Generation)
   const hydrateModule = async (moduleId) => {
     const module = modules.find(m => m.moduleId === moduleId);
+    
+    // Backward Compatibility (Requirement 6.1, 6.2):
+    // Check if module already has subComponents - if so, skip Phase 1 generation
+    // This handles existing modules with full content already populated
     if (!module || (module.subComponents && module.subComponents.length > 0)) {
       return;
     }
 
-    setHydratingModules(prev => ({ ...prev, [moduleId]: true }));
+    setIsLoadingMetadata(prev => ({ ...prev, [moduleId]: true }));
+    setMetadataError(prev => ({ ...prev, [moduleId]: null }));
 
     try {
       const payload = {
@@ -240,8 +246,10 @@ export default function RoadmapDetail() {
       );
     } catch (error) {
       console.error('Error hydrating module:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to generate content. Please try again.';
+      setMetadataError(prev => ({ ...prev, [moduleId]: errorMessage }));
     } finally {
-      setHydratingModules(prev => ({ ...prev, [moduleId]: false }));
+      setIsLoadingMetadata(prev => ({ ...prev, [moduleId]: false }));
     }
   };
 
@@ -270,8 +278,9 @@ export default function RoadmapDetail() {
     );
   }
 
-  const completedModulesCount = modules.filter(m => m.markedAsKnown).length;
-  const progressPercentage = modules.length > 0 ? Math.round((completedModulesCount / modules.length) * 100) : 0;
+  const totalSubTopics = modules.reduce((sum, m) => sum + (m.subComponents?.length || 0), 0);
+  const completedSubTopics = modules.reduce((sum, m) => sum + (m.subComponents?.filter(sc => sc.status === 'REVIEWED').length || 0), 0);
+  const progressPercentage = totalSubTopics > 0 ? Math.round((completedSubTopics / totalSubTopics) * 100) : 0;
 
   return (
     <motion.div
@@ -407,7 +416,7 @@ export default function RoadmapDetail() {
                         alert('Please complete the previous module to unlock this one.');
                         return;
                       }
-                      navigate(`/roadmap/${id}/module/${module.moduleId}`);
+                      navigate(`/roadmap/${id}/module/${module.moduleId}`);  // ← add this
                     }}
                     className={`
                         relative p-6 rounded-xl border h-[240px] flex flex-col justify-between transition-all duration-300 group
@@ -579,13 +588,31 @@ export default function RoadmapDetail() {
                           className="border-t border-gray-800"
                         >
                           <div className="p-6 space-y-6">
-                            {hydratingModules[module.moduleId] ? (
+                            {isLoadingMetadata[module.moduleId] ? (
                               <div className="flex flex-col items-center justify-center p-8 text-gray-400">
                                 <svg className="animate-spin h-8 w-8 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                                 <span>Generating personalized content...</span>
+                              </div>
+                            ) : metadataError[module.moduleId] ? (
+                              <div className="flex flex-col items-center justify-center p-8">
+                                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+                                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                                <p className="text-red-400 text-center mb-4">{metadataError[module.moduleId]}</p>
+                                <button
+                                  onClick={() => hydrateModule(module.moduleId)}
+                                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-all flex items-center gap-2"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                  </svg>
+                                  Retry
+                                </button>
                               </div>
                             ) : (
                               <>
@@ -639,7 +666,30 @@ export default function RoadmapDetail() {
                                           subComponent={subComponent}
                                           roadmapId={id}
                                           moduleId={module.moduleId}
-                                          onStatusChange={() => fetchRoadmap()}
+                                          onStatusChange={(updatedSubComponent) => {
+                                            // Backward Compatibility (Requirement 6.3, 6.4):
+                                            // Handle mixed state - update only the changed subtopic
+                                            // Preserve existing content for all other subtopics
+                                            if (updatedSubComponent) {
+                                              setModules(prevModules =>
+                                                prevModules.map(m =>
+                                                  m.moduleId === module.moduleId
+                                                    ? {
+                                                        ...m,
+                                                        subComponents: m.subComponents.map(sc =>
+                                                          sc.subComponentId === updatedSubComponent.subComponentId
+                                                            ? updatedSubComponent
+                                                            : sc
+                                                        )
+                                                      }
+                                                    : m
+                                                )
+                                              );
+                                            } else {
+                                              // Fallback: refetch if no updated data provided
+                                              fetchRoadmap();
+                                            }
+                                          }}
                                         />
                                       ))}
                                     </div>

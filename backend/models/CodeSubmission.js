@@ -6,6 +6,11 @@ const codeSubmissionSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  sessionId: {
+    type: String,
+    required: true,
+    index: true
+  },
   questionId: {
     type: String,
     required: true

@@ -103,24 +103,46 @@ const roadmapSchema = new mongoose.Schema({
     subComponents: [{
       subComponentId: Number,
       title: String,
+      description: String, // Brief description for Phase 1 metadata
+      importanceLevel: {
+        type: String,
+        enum: ['high', 'medium', 'low'],
+        default: 'medium' // Default for backward compatibility
+      },
       hasQuiz: {
         type: Boolean,
         default: true // Most topics have quizzes except intro topics
       },
       learningContent: {
-        explanation: String,
-        codeExamples: [{
-          language: String,
-          code: String,
-          description: String
-        }],
-        visualDiagrams: [String], // URLs or base64
-        keyTakeaways: [String],
-        commonMistakes: [String],
+        explanation: {
+          type: String,
+          default: null // Supports null/empty for Phase 1 (metadata only)
+        },
+        codeExamples: {
+          type: [{
+            language: String,
+            code: String,
+            description: String
+          }],
+          default: [] // Default to empty array for Phase 1
+        },
+        visualDiagrams: {
+          type: [String], // URLs or base64
+          default: [] // Default to empty array for Phase 1
+        },
+        keyTakeaways: {
+          type: [String],
+          default: [] // Default to empty array for Phase 1
+        },
+        commonMistakes: {
+          type: [String],
+          default: [] // Default to empty array for Phase 1
+        },
         // Hidden summary for quiz generation (not shown to user)
         contentSummary: {
           type: String,
-          select: false // This field won't be returned in queries by default
+          select: false, // This field won't be returned in queries by default
+          default: null // Supports null for Phase 1
         }
       },
       externalResources: {

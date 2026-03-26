@@ -14,9 +14,13 @@ export default function SubComponentViewer({
   onNavigate = null
 }) {
   const [isExpanded, setIsExpanded] = useState(isDetailView); // Auto-expand in detail view
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingContent, setIsLoadingContent] = useState(false); // Phase 2 loading state
   const [showSolution, setShowSolution] = useState(false);
+  const [contentError, setContentError] = useState(null); // Error state for Phase 2
+  const [copiedIndex, setCopiedIndex] = useState(null); // Track which code block was copied
 
+  // Backward Compatibility (Requirement 6.1, 6.2):
+  // Check if subtopic has existing content - treat as already hydrated
   const hasContent = subComponent.learningContent && subComponent.learningContent.explanation;
   const isReviewed = subComponent.status === 'REVIEWED';
 
@@ -42,18 +46,51 @@ export default function SubComponentViewer({
   };
 
   const handleGenerateContent = async () => {
-    setIsGenerating(true);
+    // Backward Compatibility (Requirement 6.1, 6.2, 6.3):
+    // Check if content already exists - treat existing content as already hydrated
+    // This handles mixed state where some subtopics have content and some don't
+    if (hasContent) {
+      console.log('Content already exists, skipping generation');
+      return;
+    }
+
+    // Clear any previous errors
+    setContentError(null);
+    
+    // Set loading state to true before API call
+    setIsLoadingContent(true);
+    
     try {
-      await api.post(
-        `/roadmaps/${roadmapId}/modules/${moduleId}/subcomponents/${subComponent.subComponentId}/generate`
+      // Phase 2: Generate content only for subtopics with null/empty content
+      const response = await api.post(
+        `/roadmaps/${roadmapId}/modules/${moduleId}/subtopics/${subComponent.subComponentId}/generate-content`
       );
-      // Refresh the page or update state
-      window.location.reload();
+
+      // Handle successful response: optimistically update local state
+      if (response.data.success && response.data.data) {
+        const updatedSubtopic = response.data.data;
+        
+        // Optimistic UI: Update the subComponent with the new content immediately
+        // This avoids redundant API calls and provides instant feedback
+        if (onStatusChange) {
+          onStatusChange(updatedSubtopic);
+        } else {
+          // If no callback provided, reload to show new content
+          window.location.reload();
+        }
+      }
     } catch (error) {
       console.error('Error generating content:', error);
-      alert('Failed to generate content');
+      
+      // Handle error response: display user-friendly error message
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error?.details ||
+                          'Failed to generate content. Please try again.';
+      
+      setContentError(errorMessage);
     } finally {
-      setIsGenerating(false);
+      // Set loading state to false after completion
+      setIsLoadingContent(false);
     }
   };
 
@@ -68,7 +105,7 @@ export default function SubComponentViewer({
           <div className="flex items-center gap-3 flex-1">
             {/* Status Icon */}
             <div className={`
-            w-8 h-8 rounded-lg flex items-center justify-center
+            w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
             ${isReviewed ? 'bg-green-600' : 'bg-gray-700'}
           `}>
               {isReviewed ? (
@@ -82,13 +119,35 @@ export default function SubComponentViewer({
               )}
             </div>
 
-            {/* Title */}
-            <div className="flex-1">
-              <h4 className={`font-semibold ${isReviewed ? 'text-green-400' : 'text-white'}`}>
-                {subComponent.title}
-              </h4>
+            {/* Title and Description */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className={`font-semibold ${isReviewed ? 'text-green-400' : 'text-white'}`}>
+                  {subComponent.title}
+                </h4>
+                {/* Importance Level Badge */}
+                {subComponent.importanceLevel && (
+                  <span className={`
+                    px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide flex-shrink-0
+                    ${subComponent.importanceLevel === 'high' 
+                      ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
+                      : subComponent.importanceLevel === 'medium'
+                      ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                      : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                    }
+                  `}>
+                    {subComponent.importanceLevel}
+                  </span>
+                )}
+              </div>
+              {/* Description */}
+              {subComponent.description && (
+                <p className="text-gray-400 text-sm line-clamp-2">
+                  {subComponent.description}
+                </p>
+              )}
               {isReviewed && subComponent.reviewedAt && (
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 mt-1">
                   Reviewed {new Date(subComponent.reviewedAt).toLocaleDateString()}
                 </p>
               )}
@@ -98,7 +157,7 @@ export default function SubComponentViewer({
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
-              className="text-gray-500"
+              className="text-gray-500 flex-shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -119,7 +178,40 @@ export default function SubComponentViewer({
             className={isDetailView ? '' : 'border-t border-gray-800'}
           >
             <div className={isDetailView ? 'space-y-6' : 'p-6 space-y-6'}>
-              {!hasContent ? (
+              {isLoadingContent ? (
+                /* Phase 2 Loading State */
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-indigo-500/30">
+                    <div className="w-10 h-10 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                  <h5 className="text-white text-xl font-bold mb-3">Generating Content...</h5>
+                  <p className="text-gray-400 text-base max-w-md mx-auto">
+                    Creating comprehensive learning material tailored to this subtopic
+                  </p>
+                </div>
+              ) : contentError ? (
+                /* Error State with Retry Button */
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-500/30">
+                    <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <h5 className="text-white text-xl font-bold mb-3">Content Generation Failed</h5>
+                  <p className="text-gray-400 text-base mb-6 max-w-md mx-auto">
+                    {contentError}
+                  </p>
+                  <button
+                    onClick={handleGenerateContent}
+                    className="px-8 py-4 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-xl font-bold text-lg transition-all flex items-center gap-3 mx-auto shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105 active:scale-95"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Retry Generation
+                  </button>
+                </div>
+              ) : !hasContent ? (
                 /* No Content - Generate Button */
                 <div className="text-center py-12">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-500/30">
@@ -133,10 +225,10 @@ export default function SubComponentViewer({
                   </p>
                   <button
                     onClick={handleGenerateContent}
-                    disabled={isGenerating}
+                    disabled={isLoadingContent}
                     className="px-8 py-4 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 mx-auto shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 active:scale-95"
                   >
-                    {isGenerating ? (
+                    {isLoadingContent ? (
                       <>
                         <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                         Generating Content...
@@ -240,14 +332,21 @@ export default function SubComponentViewer({
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(example.code);
-                                // Could add a toast notification here
+                                setCopiedIndex(idx);
+                                setTimeout(() => setCopiedIndex(null), 2000);
                               }}
                               className="copy-button"
                               title="Copy code"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
+                              {copiedIndex === idx ? (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              )}
                             </button>
                           </div>
                           <div className="code-content">

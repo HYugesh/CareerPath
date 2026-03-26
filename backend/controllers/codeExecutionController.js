@@ -16,22 +16,22 @@ const { compareOutput } = require('../utils/outputComparator');
  */
 const wrapCodeForExecution = (code, language) => {
   const lang = language.toLowerCase();
-  
+
   // Java: Wrap in Main class if not already present
   if (lang === 'java') {
     // Check if code already has a public class Main
     if (code.includes('public class Main') || code.includes('class Main')) {
       return code;
     }
-    
+
     // Check if code has any other public class definition
     const hasPublicClass = /public\s+class\s+\w+/.test(code);
-    
+
     if (hasPublicClass) {
       // Replace the class name with Main
       return code.replace(/public\s+class\s+(\w+)/, 'public class Main');
     }
-    
+
     // If no class definition, wrap the code in Main class
     // This handles cases where user writes only methods
     return `import java.util.*;
@@ -40,22 +40,22 @@ public class Main {
 ${code}
 }`;
   }
-  
+
   // C#: Wrap in Main class if not already present
   if (lang === 'c#' || lang === 'csharp' || lang === 'cs') {
     // Check if code already has a class Main or Program
     if (code.includes('class Main') || code.includes('class Program')) {
       return code;
     }
-    
+
     // Check if code has any other class definition
     const hasClass = /class\s+\w+/.test(code);
-    
+
     if (hasClass) {
       // Replace the class name with Program (C# convention)
       return code.replace(/class\s+(\w+)/, 'class Program');
     }
-    
+
     // If no class definition, wrap the code in Program class
     return `using System;
 using System.Collections.Generic;
@@ -65,7 +65,7 @@ class Program {
 ${code}
 }`;
   }
-  
+
   // C++: Wrap in main function if not present (optional, for future use)
   if (lang === 'c++' || lang === 'cpp') {
     if (code.includes('int main(')) {
@@ -74,7 +74,7 @@ ${code}
     // For now, return as-is. Can add wrapping logic if needed.
     return code;
   }
-  
+
   // Python, JavaScript, Ruby, Go, Rust, PHP, TypeScript, Kotlin, R: No wrapping needed
   return code;
 };
@@ -87,7 +87,7 @@ const runCode = async (req, res) => {
   try {
     // Extract required fields from request body
     const { code, language, testCases } = req.body;
-    
+
     // Validate that all required fields are present
     if (!code || !language || !testCases) {
       return res.status(400).json({
@@ -95,54 +95,54 @@ const runCode = async (req, res) => {
         message: 'Missing required fields'
       });
     }
-    
+
     // Convert language name to Judge0 language ID
     const languageId = languageMap[language.toLowerCase()];
-    
+
     if (!languageId) {
       return res.status(400).json({
         success: false,
         message: `Unsupported language: ${language}`
       });
     }
-    
+
     // Wrap code with proper structure for languages that need it
     const wrappedCode = wrapCodeForExecution(code, language);
-    
+
     console.log(`[CODE_EXEC] Running code with language: ${language} (ID: ${languageId})`);
-    
+
     // Initialize results array
     const results = [];
-    
+
     // Iterate through each test case sequentially
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
-      
+
       try {
         // Step 1: Extract stdin directly from test case
         const stdin = testCase.stdin || testCase.input || '';
-        
+
         // Step 2: Execute code using Judge0 API
         const executionResult = await executeCode(languageId, wrappedCode, stdin);
-        
+
         // Step 3: Extract stdout, stderr, and compile_output from Judge0 response
         const stdout = executionResult.stdout || '';
         const stderr = executionResult.stderr || '';
         const compileOutput = executionResult.compile_output || '';
         const status = executionResult.status || {};
-        
+
         // Step 4: Compare stdout with expected output
         const actualOutput = stdout.trim();
         const expectedOutput = testCase.expectedOutput || testCase.expected_output || '';
-        
+
         // For custom input mode (no expected output), skip comparison
         const isCustomMode = !expectedOutput || expectedOutput === 'null';
         const outputsMatch = isCustomMode ? true : compareOutput(actualOutput, expectedOutput);
-        
+
         // Step 5: Determine if test passed (status.id === 3 means "Accepted" in Judge0)
         const isAccepted = status.id === 3;
         const passed = isAccepted && outputsMatch;
-        
+
         // Step 6: Capture error messages for failed tests
         let error = null;
         if (compileOutput) {
@@ -154,7 +154,7 @@ const runCode = async (req, res) => {
         } else if (!isAccepted) {
           error = `Execution Error: ${status.description || 'Unknown error'}`;
         }
-        
+
         // Step 7: Build result object for this test case
         results.push({
           testCaseIndex: i,
@@ -181,13 +181,13 @@ const runCode = async (req, res) => {
         });
       }
     }
-    
+
     // Calculate summary statistics
     const total = results.length;
     const passed = results.filter(r => r.passed).length;
     const failed = total - passed;
     const score = total > 0 ? Math.round((passed / total) * 100) : 0;
-    
+
     // Step 8: Return structured response
     return res.status(200).json({
       success: true,
@@ -216,8 +216,8 @@ const runCode = async (req, res) => {
 const submitCode = async (req, res) => {
   try {
     // Extract required fields from request body
-    const { code, language, testCases, problemId, questionTitle, topic, difficulty } = req.body;
-    
+    const { code, language, testCases, problemId, questionTitle, topic, difficulty, sessionId } = req.body;
+
     // Validate that all required fields are present
     if (!code || !language || !testCases) {
       return res.status(400).json({
@@ -225,17 +225,24 @@ const submitCode = async (req, res) => {
         message: 'Missing required fields'
       });
     }
-    
+
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required'
+      });
+    }
+
     // Convert language name to Judge0 language ID
     const languageId = languageMap[language.toLowerCase()];
-    
+
     if (!languageId) {
       return res.status(400).json({
         success: false,
         message: `Unsupported language: ${language}`
       });
     }
-    
+
     // Log submission for future tracking
     console.log('[CODE_EXEC] Code submission:', {
       userId: req.user?.id || 'anonymous',
@@ -244,42 +251,42 @@ const submitCode = async (req, res) => {
       languageId,
       testCount: testCases.length
     });
-    
+
     // Wrap code with proper structure for languages that need it
     const wrappedCode = wrapCodeForExecution(code, language);
-    
+
     // Initialize results array
     const results = [];
-    
+
     // Iterate through each test case sequentially (public + private)
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
-      
+
       try {
         // Step 1: Extract stdin directly from test case
         const stdin = testCase.stdin || testCase.input || '';
-        
+
         // Step 2: Execute code using Judge0 API
         const executionResult = await executeCode(languageId, wrappedCode, stdin);
-        
+
         // Step 3: Extract stdout, stderr, and compile_output from Judge0 response
         const stdout = executionResult.stdout || '';
         const stderr = executionResult.stderr || '';
         const compileOutput = executionResult.compile_output || '';
         const status = executionResult.status || {};
-        
+
         // Step 4: Compare stdout with expected output
         const actualOutput = stdout.trim();
         const expectedOutput = testCase.expectedOutput || testCase.expected_output || '';
-        
+
         // For custom input mode (no expected output), skip comparison
         const isCustomMode = !expectedOutput || expectedOutput === 'null';
         const outputsMatch = isCustomMode ? true : compareOutput(actualOutput, expectedOutput);
-        
+
         // Step 5: Determine if test passed (status.id === 3 means "Accepted" in Judge0)
         const isAccepted = status.id === 3;
         const passed = isAccepted && outputsMatch;
-        
+
         // Step 6: Capture error messages for failed tests
         let error = null;
         if (compileOutput) {
@@ -291,7 +298,7 @@ const submitCode = async (req, res) => {
         } else if (!isAccepted) {
           error = `Execution Error: ${status.description || 'Unknown error'}`;
         }
-        
+
         // Step 7: Build result object for this test case
         results.push({
           testCaseIndex: i,
@@ -318,20 +325,21 @@ const submitCode = async (req, res) => {
         });
       }
     }
-    
+
     // Calculate summary statistics
     const total = results.length;
     const passed = results.filter(r => r.passed).length;
     const failed = total - passed;
     const score = total > 0 ? Math.round((passed / total) * 100) : 0;
-    
+
     // Save submission to database if user is authenticated
     if (req.user && problemId && questionTitle) {
       try {
         const CodeSubmission = require('../models/CodeSubmission');
-        
+
         const submission = new CodeSubmission({
           user: req.user.id,
+          sessionId: sessionId,
           questionId: problemId,
           questionTitle: questionTitle,
           code: code,
@@ -344,15 +352,15 @@ const submitCode = async (req, res) => {
             score: score
           }
         });
-        
+
         await submission.save();
-        console.log('[CODE_EXEC] Submission saved to database');
+        console.log('[CODE_EXEC] Submission saved to database with sessionId:', sessionId);
       } catch (dbError) {
         console.error('[CODE_EXEC] Failed to save submission to database:', dbError);
         // Don't fail the request if DB save fails
       }
     }
-    
+
     // Step 8: Return structured response
     return res.status(200).json({
       success: true,
@@ -382,7 +390,7 @@ const submitCode = async (req, res) => {
 const getSupportedLanguages = async (req, res) => {
   try {
     console.log('[CODE_EXEC] Fetching supported languages');
-    
+
     // Return commonly used languages for the UI
     const commonLanguages = [
       { language: 'javascript', version: 'Latest', alias: 'JavaScript' },
@@ -391,9 +399,9 @@ const getSupportedLanguages = async (req, res) => {
       { language: 'c++', version: 'Latest', alias: 'C++' },
       { language: 'c', version: 'Latest', alias: 'C' }
     ];
-    
+
     console.log('[CODE_EXEC] Successfully fetched', commonLanguages.length, 'languages');
-    
+
     // Return list of supported languages and versions
     res.status(200).json({
       success: true,
@@ -401,7 +409,7 @@ const getSupportedLanguages = async (req, res) => {
     });
   } catch (error) {
     console.error('[CODE_EXEC] Error fetching supported languages:', error.message);
-    
+
     res.status(500).json({
       success: false,
       message: 'Failed to fetch supported languages'
@@ -416,14 +424,22 @@ const getSupportedLanguages = async (req, res) => {
 const getUserSubmissions = async (req, res) => {
   try {
     const CodeSubmission = require('../models/CodeSubmission');
-    
+
+    const filter = { user: req.user.id };
+
+    // If sessionId is provided in query params, filter by it
+    if (req.query.sessionId) {
+      filter.sessionId = req.query.sessionId;
+      console.log(`[CODE_EXEC] Filtering submissions by sessionId: ${req.query.sessionId}`);
+    }
+
     // Get submissions for the authenticated user
-    const submissions = await CodeSubmission.find({ user: req.user.id })
+    const submissions = await CodeSubmission.find(filter)
       .sort({ submittedAt: -1 })
       .limit(50); // Limit to last 50 submissions
-    
+
     console.log(`[CODE_EXEC] Retrieved ${submissions.length} submissions for user ${req.user.id}`);
-    
+
     res.status(200).json({
       success: true,
       submissions: submissions

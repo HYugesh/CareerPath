@@ -94,8 +94,26 @@ export default function ModuleDetail() {
     }
   };
 
-  const handleSubComponentStatusChange = () => {
-    fetchModuleData();
+  const handleSubComponentStatusChange = (updatedSubComponent) => {
+    // Optimistic UI update: Update local state directly instead of refetching
+    if (updatedSubComponent) {
+      setModule(prev => ({
+        ...prev,
+        subComponents: prev.subComponents.map(sc =>
+          sc.subComponentId === updatedSubComponent.subComponentId
+            ? updatedSubComponent
+            : sc
+        )
+      }));
+      
+      // Also update the selected subcomponent if it's the one that changed
+      if (selectedSubComponent?.subComponentId === updatedSubComponent.subComponentId) {
+        setSelectedSubComponent(updatedSubComponent);
+      }
+    } else {
+      // Fallback: refetch if no updated data provided
+      fetchModuleData();
+    }
   };
 
   const handleStartQuiz = async () => {
@@ -383,9 +401,9 @@ export default function ModuleDetail() {
                           <div>
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="text-2xl font-bold text-white tracking-tight">Final Module Assessment</h3>
-                              <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase rounded-md tracking-widest">
+                              {/* <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase rounded-md tracking-widest">
                                 Certification Step
-                              </span>
+                              </span> */}
                             </div>
                             <p className="text-gray-400 text-base max-w-md">
                               Congratulations on completing all topics! Demonstrate your mastery of <strong>{module.title}</strong> to unlock the next module.

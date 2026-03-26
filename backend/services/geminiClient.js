@@ -3,6 +3,11 @@
  * Single source of truth for all Gemini API calls
  * Implements rate limiting, caching, and fallback mechanisms
  * Uses gemini-2.5-flash as primary, gemini-2.5-flash-lite as fallback
+ *
+ * KEY CHANGE: Separated text and JSON call strategies.
+ * - callGeminiText: for long prose/markdown — no JSON parsing, zero parse failures
+ * - callGeminiJSON: for small structured data — safe minimal JSON cleaning only
+ * - callGemini: unified entry point (backward compatible)
  */
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -18,9 +23,12 @@ const MODELS_TO_TRY = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 const responseCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
-// Rate limiting
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
+// Rate limiting — tracked per model to avoid cross-model collisions
+const lastRequestTime = {
+  "gemini-2.5-flash": 0,
+  "gemini-2.5-flash-lite": 0,
+};
+const MIN_REQUEST_INTERVAL = 1200; // slightly above 1s to be safe
 
 /**
  * Initialize the Gemini client
@@ -29,7 +37,7 @@ const initializeClient = () => {
   if (!isInitialized) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('❌ GEMINI_API_KEY not found in environment variables');
+      console.error("❌ GEMINI_API_KEY not found in environment variables");
       return null;
     }
     genAI = new GoogleGenerativeAI(apiKey);
@@ -39,17 +47,32 @@ const initializeClient = () => {
 };
 
 /**
- * Aggressive JSON fixer - handles severely malformed AI responses
+ * Minimal JSON cleaner — REPLACES the old aggressiveJSONFix.
+ *
+ * Only does safe operations:
+ *   1. Strips markdown fences (```json ... ```)
+ *   2. Trims to first [ or { and last ] or }
+ *   3. Removes trailing commas before } or ]
+ *
+ * Does NOT touch content inside string values (no \n removal, no whitespace
+ * collapsing) — that was the root cause of the old parse failures at
+ * positions like 11250, 15929 etc.
+ *
+ * Use this ONLY for small JSON responses with no large text fields inside.
+ * For large text content use callGeminiText instead.
  */
-const aggressiveJSONFix = (text) => {
+const cleanSmallJSON = (text) => {
   try {
-    // Step 1: Remove all markdown
-    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-    
-    // Step 2: Remove any text before first { or [
-    const firstBrace = text.indexOf('{');
-    const firstBracket = text.indexOf('[');
-    
+    let cleaned = text.trim();
+
+    // Strip ```json ... ``` or ``` ... ``` fences
+    cleaned = cleaned.replace(/^```json\s*/i, "").replace(/\s*```$/, "").trim();
+    cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
+
+    // Find first { or [
+    const firstBrace = cleaned.indexOf("{");
+    const firstBracket = cleaned.indexOf("[");
+
     let start = -1;
     if (firstBrace !== -1 && firstBracket !== -1) {
       start = Math.min(firstBrace, firstBracket);
@@ -58,105 +81,39 @@ const aggressiveJSONFix = (text) => {
     } else if (firstBracket !== -1) {
       start = firstBracket;
     }
-    
+
     if (start === -1) {
-      console.error('❌ No JSON start found in response');
+      console.error("❌ No JSON start found in response");
       return null;
     }
-    
-    // Step 3: Find matching end
-    const lastBrace = text.lastIndexOf('}');
-    const lastBracket = text.lastIndexOf(']');
+
+    // Find last } or ]
+    const lastBrace = cleaned.lastIndexOf("}");
+    const lastBracket = cleaned.lastIndexOf("]");
     const end = Math.max(lastBrace, lastBracket);
-    
+
     if (end === -1 || end <= start) {
-      console.error('❌ No valid JSON end found');
+      console.error("❌ No valid JSON end found");
       return null;
     }
-    
-    text = text.substring(start, end + 1);
-    
-    // Step 4: Fix common issues line by line
-    const lines = text.split('\n');
-    const fixedLines = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      
-      // Skip empty lines
-      if (!line.trim()) {
-        fixedLines.push(line);
-        continue;
-      }
-      
-      // Remove comments
-      line = line.replace(/\/\/.*$/, '');
-      line = line.replace(/\/\*.*?\*\//g, '');
-      
-      // Fix unquoted keys: word: -> "word":
-      line = line.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
-      
-      // Fix single quotes to double quotes (but be careful with apostrophes in strings)
-      // Only replace single quotes that are clearly string delimiters
-      if (line.includes("'")) {
-        // Simple heuristic: replace ' with " if it's at start/end of a value
-        line = line.replace(/:\s*'([^']*)'/g, ': "$1"');
-      }
-      
-      // Fix unterminated strings - if line has odd number of quotes and ends with comma or nothing
-      const quoteCount = (line.match(/"/g) || []).length;
-      if (quoteCount % 2 !== 0) {
-        // Unterminated string - try to close it
-        if (line.trim().endsWith(',')) {
-          line = line.replace(/,\s*$/, '",');
-        } else if (!line.trim().endsWith('"')) {
-          line = line.trimEnd() + '"';
-        }
-      }
-      
-      // Remove trailing commas before } or ]
-      line = line.replace(/,(\s*[}\]])/g, '$1');
-      
-      fixedLines.push(line);
-    }
-    
-    text = fixedLines.join('\n');
-    
-    // Step 5: Balance braces and brackets
-    const openBraces = (text.match(/\{/g) || []).length;
-    const closeBraces = (text.match(/\}/g) || []).length;
-    const openBrackets = (text.match(/\[/g) || []).length;
-    const closeBrackets = (text.match(/\]/g) || []).length;
-    
-    // Add missing closing brackets
-    if (openBrackets > closeBrackets) {
-      text += ']'.repeat(openBrackets - closeBrackets);
-    }
-    
-    // Add missing closing braces
-    if (openBraces > closeBraces) {
-      text += '}'.repeat(openBraces - closeBraces);
-    }
-    
-    // Step 6: Final cleanup
-    text = text.replace(/,(\s*[}\]])/g, '$1'); // Remove any remaining trailing commas
-    text = text.replace(/\n/g, ' '); // Remove line breaks from strings
-    text = text.replace(/\r/g, ''); // Remove carriage returns
-    text = text.replace(/\s+/g, ' '); // Normalize whitespace
-    
-    // Step 7: Try to parse
+
+    cleaned = cleaned.substring(start, end + 1);
+
+    // Only remove trailing commas — safe, doesn't touch string content
+    cleaned = cleaned.replace(/,(\s*[}\]])/g, "$1");
+
+    // Validate
     try {
-      JSON.parse(text);
-      console.log('✅ JSON successfully fixed and validated');
-      return text;
+      JSON.parse(cleaned);
+      console.log("✅ JSON cleaned and validated successfully");
+      return cleaned;
     } catch (parseError) {
-      console.error('❌ JSON still invalid after fixes:', parseError.message);
-      console.error('Problematic JSON (first 500 chars):', text.substring(0, 500));
+      console.error("❌ JSON still invalid after cleaning:", parseError.message);
+      console.error("Problematic JSON (first 500 chars):", cleaned.substring(0, 500));
       return null;
     }
-    
   } catch (error) {
-    console.error('❌ JSON fixing failed:', error.message);
+    console.error("❌ JSON cleaning failed:", error.message);
     return null;
   }
 };
@@ -186,7 +143,7 @@ const getCachedResponse = (key) => {
 const setCachedResponse = (key, data) => {
   responseCache.set(key, {
     data,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 
   // Clean old cache entries
@@ -197,38 +154,36 @@ const setCachedResponse = (key, data) => {
 };
 
 /**
- * Wait for rate limit
+ * Wait for rate limit — per model so primary and fallback
+ * don't share the same timer.
  */
-const waitForRateLimit = async () => {
+const waitForRateLimit = async (modelName) => {
   const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
+  const timeSinceLastRequest = now - (lastRequestTime[modelName] || 0);
 
   if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
     const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-    await new Promise(resolve => setTimeout(resolve, waitTime));
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
 
-  lastRequestTime = Date.now();
+  lastRequestTime[modelName] = Date.now();
 };
 
 /**
- * Main function to call Gemini API with all optimizations
- * Tries gemini-2.5-flash first, falls back to gemini-2.5-flash-lite
- * @param {string} prompt - The prompt to send
- * @param {object} options - Configuration options
- * @returns {Promise<string>} - The AI response text
+ * Core internal function — shared by callGemini, callGeminiText, callGeminiJSON.
+ * Not exported directly.
  */
-const callGemini = async (prompt, options = {}) => {
+const _callGeminiInternal = async (prompt, options = {}) => {
   const {
     temperature = 0.7,
-    maxOutputTokens = 2048, // Reduced from 4096 for efficiency
+    maxOutputTokens = 2048,
     useCache = true,
-    responseType = 'json', // 'json' or 'text'
-    retries = 1
+    responseType = "json", // 'json' or 'text'
+    retries = 1,
   } = options;
 
   // Check cache first
-  const cacheKey = getCacheKey(prompt, { temperature, maxOutputTokens });
+  const cacheKey = getCacheKey(prompt, { temperature, maxOutputTokens, responseType });
   if (useCache) {
     const cached = getCachedResponse(cacheKey);
     if (cached) return cached;
@@ -237,16 +192,21 @@ const callGemini = async (prompt, options = {}) => {
   // Initialize client
   const client = initializeClient();
   if (!client) {
-    throw new Error('Gemini client not initialized - API key missing');
+    throw new Error("Gemini client not initialized - API key missing");
   }
-
-  // Wait for rate limit
-  await waitForRateLimit();
 
   let lastError = null;
 
   // Try each model in order
   for (const modelName of MODELS_TO_TRY) {
+    // Per-model rate limiting
+    await waitForRateLimit(modelName);
+
+    // Use native JSON mime type when requesting JSON — Gemini will constrain
+    // its output to valid JSON, which is more reliable than post-processing.
+    // Use text/plain for prose — avoids Gemini wrapping content in JSON.
+    const responseMimeType =
+      responseType === "json" ? "application/json" : "text/plain";
 
     const model = client.getGenerativeModel({
       model: modelName,
@@ -255,41 +215,39 @@ const callGemini = async (prompt, options = {}) => {
         topP: 0.95,
         topK: 40,
         maxOutputTokens,
-        responseMimeType: responseType === 'json' ? "application/json" : "text/plain"
-      }
+        responseMimeType,
+      },
     });
 
     // Try with retries for each model
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         if (attempt > 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
         }
 
         const result = await model.generateContent({
-          contents: [{
-            parts: [{ text: prompt }]
-          }]
+          contents: [{ parts: [{ text: prompt }] }],
         });
 
         const response = result.response;
         let text = response.text();
 
         console.log(`📥 Raw response from ${modelName} (length: ${text.length})`);
-        console.log('First 200 chars:', text.substring(0, 200));
+        console.log("First 200 chars:", text.substring(0, 200));
 
-        // Clean up JSON responses with aggressive fixing
-        if (responseType === 'json') {
-          const extracted = aggressiveJSONFix(text);
-          
+        if (responseType === "json") {
+          // Use the safe minimal cleaner — NOT the old aggressive fixer
+          const extracted = cleanSmallJSON(text);
+
           if (!extracted) {
             console.error(`❌ Failed to extract valid JSON from ${modelName}`);
-            throw new Error('Invalid JSON structure from AI');
+            throw new Error("Invalid JSON structure from AI");
           }
-          
+
           text = extracted;
-          console.log('✅ JSON extracted and validated successfully');
         }
+        // For responseType === 'text', return as-is — no processing needed
 
         // Cache successful response
         if (useCache) {
@@ -297,28 +255,74 @@ const callGemini = async (prompt, options = {}) => {
         }
 
         return text;
-
       } catch (error) {
         lastError = error;
-        const errorMsg = error.message?.substring(0, 100) || 'Unknown error';
+        const errorMsg = error.message?.substring(0, 100) || "Unknown error";
         console.log(`❌ ${modelName} error (attempt ${attempt + 1}):`, errorMsg);
 
-        if (error.message?.includes('403') || error.message?.includes('401') || error.message?.includes('expired')) {
+        // Don't retry on fatal errors
+        if (
+          error.message?.includes("403") ||
+          error.message?.includes("401") ||
+          error.message?.includes("expired")
+        ) {
           break;
         }
 
-        if (error.message?.includes('429') || error.message?.includes('quota')) {
+        if (
+          error.message?.includes("429") ||
+          error.message?.includes("quota")
+        ) {
           break;
         }
 
-        if (error.message?.includes('404')) {
+        if (error.message?.includes("404")) {
           break;
         }
       }
     }
   }
 
-  throw lastError || new Error('All Gemini models failed');
+  throw lastError || new Error("All Gemini models failed");
+};
+
+/**
+ * callGemini — main unified entry point (backward compatible).
+ * All existing callers continue to work without any changes.
+ */
+const callGemini = async (prompt, options = {}) => {
+  return _callGeminiInternal(prompt, options);
+};
+
+/**
+ * callGeminiText — use for any prompt that returns long prose or markdown.
+ * Examples: subtopic explanations, article content, detailed descriptions.
+ *
+ * Returns raw text string. No JSON parsing attempted — zero parse failures.
+ */
+const callGeminiText = async (prompt, options = {}) => {
+  return _callGeminiInternal(prompt, {
+    ...options,
+    responseType: "text",
+    useCache: options.useCache ?? false,
+  });
+};
+
+/**
+ * callGeminiJSON — use ONLY when JSON field values are small (no long text).
+ * Examples: subtopic metadata, code examples list, quiz questions, key takeaways.
+ *
+ * Do NOT use when any JSON field value contains hundreds of words —
+ * use callGeminiText for that content instead.
+ *
+ * Returns a JSON string. Caller must JSON.parse() it.
+ */
+const callGeminiJSON = async (prompt, options = {}) => {
+  return _callGeminiInternal(prompt, {
+    ...options,
+    responseType: "json",
+    useCache: options.useCache ?? false,
+  });
 };
 
 /**
@@ -334,14 +338,16 @@ const clearCache = () => {
 const getCacheStats = () => {
   return {
     size: responseCache.size,
-    keys: Array.from(responseCache.keys()).map(k => k.substring(0, 50))
+    keys: Array.from(responseCache.keys()).map((k) => k.substring(0, 50)),
   };
 };
 
 module.exports = {
-  callGemini,
+  callGemini,        // backward compatible — existing code needs no changes
+  callGeminiText,    // NEW — use for long prose/markdown content
+  callGeminiJSON,    // NEW — use for small structured JSON only
   clearCache,
   getCacheStats,
   initializeClient,
-  MODELS_TO_TRY
+  MODELS_TO_TRY,
 };
