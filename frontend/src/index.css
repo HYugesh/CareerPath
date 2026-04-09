@@ -593,13 +593,13 @@ html.light .border-\[\#3E3E42\] { border-color: #d1d5db !important; }
 /* Section Headings (##) */
 .section-heading {
   color: #60a5fa;
-  font-size: 1.875rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-top: 2.5rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid rgba(59, 130, 246, 0.2);
-  letter-spacing: -0.025em;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  letter-spacing: -0.01em;
 }
 
 .section-heading:first-child {
@@ -608,28 +608,29 @@ html.light .border-\[\#3E3E42\] { border-color: #d1d5db !important; }
 
 /* Bold Section Headings (**Header:**) */
 .section-heading-bold {
-  color: #ffffff;
-  font-size: 1.5rem;
+  color: #e2e8f0;
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  letter-spacing: -0.015em;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
 }
 
 /* Subsection Headings (###) */
 .subsection-heading {
   color: #93c5fd;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  letter-spacing: -0.015em;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
 }
 
 /* Content Paragraphs */
 .content-paragraph {
   color: #d1d5db;
-  font-size: 1.0625rem;
+  font-size: 1rem;
+  font-weight: 400;
   line-height: 1.8;
   margin-bottom: 1.25rem;
   text-align: left;
@@ -637,6 +638,12 @@ html.light .border-\[\#3E3E42\] { border-color: #d1d5db !important; }
 
 .content-paragraph:last-child {
   margin-bottom: 0;
+}
+
+/* Ensure strong inside paragraphs doesn't make the whole para look bold */
+.content-paragraph strong {
+  font-weight: 600;
+  color: #fbbf24;
 }
 
 /* Bullet Points */

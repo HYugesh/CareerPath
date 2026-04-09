@@ -255,97 +255,76 @@ export default function SubComponentViewer({
                           __html: (() => {
                             const raw = subComponent.learningContent.explanation;
 
-                            // ── Step 1: Aggressive pre-processing ──
-                            // The AI often returns everything as one long string with inline markers.
-                            // We insert newlines before every structural token so the splitter works.
-                            let text = raw
-                              // Headings: ensure # / ## / ### start on their own line
-                              .replace(/\s*(#{1,3})\s+/g, '\n\n$1 ')
-                              // Numbered items: "5. Text" → newline before
-                              // Only when preceded by non-newline content
-                              .replace(/([^\n])\s+(\d{1,2})\.\s+(?=[A-Z"'`\[])/g, '$1\n\n$2. ')
-                              // Bullet items: single * not part of **bold**
-                              // Match "word * Word" pattern
-                              .replace(/([^\n*])\s+\*\s+(?=[A-Z"'`\[])/g, '$1\n\n* ')
-                              // Separator lines like "---"
-                              .replace(/\s*---+\s*/g, '\n\n')
-                              // Collapse 3+ newlines to 2
+                            // ── Pre-processor: insert \n\n before every structural marker ──
+                            // Handles AI output that is one long string with inline markdown
+                            const text = raw
+                              // Before ## and ### headings (even mid-sentence)
+                              .replace(/(#{1,3}\s)/g, '\n\n$1')
+                              // Before numbered list items like "1. " "12. "
+                              // Only when the digit follows a space or punctuation (not mid-word)
+                              .replace(/([.!?:,])\s+(\d{1,2})\.\s+/g, '$1\n\n$2. ')
+                              .replace(/\s+(\d{1,2})\.\s+(?=[A-Z"(])/g, '\n\n$1. ')
+                              // Before bullet items "* Word" — single star not part of **bold**
+                              // Pattern: space + * + space + uppercase/quote/backtick
+                              .replace(/\s\*\s+(?=[A-Z"'(`])/g, '\n\n* ')
+                              // Separator "---"
+                              .replace(/\s*-{3,}\s*/g, '\n\n')
+                              // Collapse excess newlines
                               .replace(/\n{3,}/g, '\n\n')
                               .trim();
 
-                            // ── Step 2: Inline formatting helper ──
+                            // ── Inline formatter ──
                             const fmt = (s) => s
-                              .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                              .replace(/`([^`]+)`/g, '<code>$1</code>')
+                              .replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>')
+                              .replace(/`([^`\n]+)`/g, '<code>$1</code>')
                               .replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
 
-                            // ── Step 3: Parse each block ──
-                            const blocks = text.split('\n\n');
-                            const html = blocks.map(block => {
+                            // ── Block parser ──
+                            return text.split('\n\n').map(block => {
                               const t = block.trim();
                               if (!t) return '';
 
-                              // ### Subheading
-                              if (t.startsWith('### ')) {
-                                return `<h3 class="subsection-heading">${fmt(t.slice(4))}</h3>`;
-                              }
-                              // ## Heading
-                              if (t.startsWith('## ')) {
-                                return `<h2 class="section-heading">${fmt(t.slice(3))}</h2>`;
-                              }
-                              // # Heading
-                              if (t.startsWith('# ')) {
-                                return `<h2 class="section-heading">${fmt(t.slice(2))}</h2>`;
-                              }
+                              // Headings
+                              if (t.startsWith('### ')) return `<h3 class="subsection-heading">${fmt(t.slice(4))}</h3>`;
+                              if (t.startsWith('## '))  return `<h2 class="section-heading">${fmt(t.slice(3))}</h2>`;
+                              if (t.startsWith('# '))   return `<h2 class="section-heading">${fmt(t.slice(2))}</h2>`;
 
-                              // Multi-line block — check if all lines are bullets or numbered
+                              // Multi-line blocks
                               const lines = t.split('\n').map(l => l.trim()).filter(Boolean);
 
                               if (lines.length > 1) {
-                                const allBullet   = lines.every(l => /^[*\-•]\s+/.test(l));
-                                const allNumbered = lines.every(l => /^\d+\.\s+/.test(l));
+                                const isBullet   = (l) => /^[*\-•]\s+/.test(l);
+                                const isNumbered = (l) => /^\d+\.\s+/.test(l);
 
-                                if (allBullet) {
-                                  const items = lines.map(l => {
-                                    const c = l.replace(/^[*\-•]\s+/, '');
-                                    return `<li class="bullet-item">${fmt(c)}</li>`;
-                                  }).join('');
-                                  return `<ul class="bullet-list">${items}</ul>`;
+                                if (lines.every(isBullet)) {
+                                  return `<ul class="bullet-list">${lines.map(l =>
+                                    `<li class="bullet-item">${fmt(l.replace(/^[*\-•]\s+/, ''))}</li>`
+                                  ).join('')}</ul>`;
                                 }
 
-                                if (allNumbered) {
-                                  const items = lines.map(l => {
+                                if (lines.every(isNumbered)) {
+                                  return `<ol class="numbered-list">${lines.map(l => {
                                     const num = l.match(/^(\d+)\./)[1];
-                                    const c   = l.replace(/^\d+\.\s+/, '');
-                                    return `<li class="numbered-item"><span class="number">${num}.</span> ${fmt(c)}</li>`;
-                                  }).join('');
-                                  return `<ol class="numbered-list">${items}</ol>`;
+                                    return `<li class="numbered-item"><span class="number">${num}.</span> ${fmt(l.replace(/^\d+\.\s+/, ''))}</li>`;
+                                  }).join('')}</ol>`;
                                 }
                               }
 
                               // Single bullet
                               if (/^[*\-•]\s+/.test(t)) {
-                                const c = t.replace(/^[*\-•]\s+/, '');
-                                return `<div class="bullet-item">${fmt(c)}</div>`;
+                                return `<div class="bullet-item">${fmt(t.replace(/^[*\-•]\s+/, ''))}</div>`;
                               }
 
                               // Single numbered item
                               if (/^\d+\.\s+/.test(t)) {
                                 const num = t.match(/^(\d+)\./)[1];
-                                const c   = t.replace(/^\d+\.\s+/, '');
-                                return `<div class="numbered-item"><span class="number">${num}.</span> ${fmt(c)}</div>`;
+                                return `<div class="numbered-item"><span class="number">${num}.</span> ${fmt(t.replace(/^\d+\.\s+/, ''))}</div>`;
                               }
 
-                              // Standalone **Bold Header:**
-                              if (/^\*\*[^*]+\*\*$/.test(t)) {
-                                return `<h3 class="section-heading-bold">${fmt(t)}</h3>`;
-                              }
-
-                              // Regular paragraph
-                              return `<p class="content-paragraph">${fmt(t)}</p>`;
+                              // Regular paragraph — apply fmt but strip any leading/trailing ** that wrap the whole para
+                              const formatted = fmt(t);
+                              return `<p class="content-paragraph">${formatted}</p>`;
                             }).join('');
-
-                            return html;
                           })()
                         }}
                       />
