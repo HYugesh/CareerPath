@@ -255,17 +255,16 @@ export default function SubComponentViewer({
                           __html: (() => {
                             const raw = subComponent.learningContent.explanation;
 
-                            // ── Pre-processor: insert \n\n before every structural marker ──
-                            // Handles AI output that is one long string with inline markdown
-                            const text = raw
-                              // Before ## and ### headings (even mid-sentence)
-                              .replace(/(#{1,3}\s)/g, '\n\n$1')
-                              // Before numbered list items like "1. " "12. "
-                              // Only when the digit follows a space or punctuation (not mid-word)
-                              .replace(/([.!?:,])\s+(\d{1,2})\.\s+/g, '$1\n\n$2. ')
+                            // ── Step 1: Normalize — insert \n\n before every structural token ──
+                            let text = raw
+                              // Remove standalone hash lines like "###" or "##" with nothing after
+                              .replace(/^#{1,3}\s*$/gm, '')
+                              // Headings with content: insert newline before # tokens
+                              .replace(/([^\n])(#{1,3}\s+\S)/g, '$1\n\n$2')
+                              // Numbered items inline: ". 1. Word" or " 1. Word"
+                              .replace(/([.!?])\s+(\d{1,2})\.\s+(?=[A-Z"(])/g, '$1\n\n$2. ')
                               .replace(/\s+(\d{1,2})\.\s+(?=[A-Z"(])/g, '\n\n$1. ')
-                              // Before bullet items "* Word" — single star not part of **bold**
-                              // Pattern: space + * + space + uppercase/quote/backtick
+                              // Bullet items inline: " * Word" (single star, not **)
                               .replace(/\s\*\s+(?=[A-Z"'(`])/g, '\n\n* ')
                               // Separator "---"
                               .replace(/\s*-{3,}\s*/g, '\n\n')
@@ -273,21 +272,36 @@ export default function SubComponentViewer({
                               .replace(/\n{3,}/g, '\n\n')
                               .trim();
 
-                            // ── Inline formatter ──
+                            // ── Step 2: Inline formatter — NO 's' flag to avoid cross-line matching ──
                             const fmt = (s) => s
-                              .replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>')
+                              // Bold: only match within a single line (no newlines inside **)
+                              .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+                              // Inline code
                               .replace(/`([^`\n]+)`/g, '<code>$1</code>')
-                              .replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+                              // Italic: single * not part of **
+                              .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
 
-                            // ── Block parser ──
+                            // ── Step 3: Parse blocks ──
                             return text.split('\n\n').map(block => {
                               const t = block.trim();
                               if (!t) return '';
 
+                              // Skip bare hash lines that slipped through
+                              if (/^#{1,3}$/.test(t)) return '';
+
                               // Headings
-                              if (t.startsWith('### ')) return `<h3 class="subsection-heading">${fmt(t.slice(4))}</h3>`;
-                              if (t.startsWith('## '))  return `<h2 class="section-heading">${fmt(t.slice(3))}</h2>`;
-                              if (t.startsWith('# '))   return `<h2 class="section-heading">${fmt(t.slice(2))}</h2>`;
+                              if (t.startsWith('### ')) {
+                                const content = t.slice(4).trim();
+                                return content ? `<h3 class="subsection-heading">${fmt(content)}</h3>` : '';
+                              }
+                              if (t.startsWith('## ')) {
+                                const content = t.slice(3).trim();
+                                return content ? `<h2 class="section-heading">${fmt(content)}</h2>` : '';
+                              }
+                              if (t.startsWith('# ')) {
+                                const content = t.slice(2).trim();
+                                return content ? `<h2 class="section-heading">${fmt(content)}</h2>` : '';
+                              }
 
                               // Multi-line blocks
                               const lines = t.split('\n').map(l => l.trim()).filter(Boolean);
@@ -321,9 +335,10 @@ export default function SubComponentViewer({
                                 return `<div class="numbered-item"><span class="number">${num}.</span> ${fmt(t.replace(/^\d+\.\s+/, ''))}</div>`;
                               }
 
-                              // Regular paragraph — apply fmt but strip any leading/trailing ** that wrap the whole para
-                              const formatted = fmt(t);
-                              return `<p class="content-paragraph">${formatted}</p>`;
+                              // Regular paragraph — strip any leading/trailing stray # characters
+                              const clean = t.replace(/^#+\s*/, '').replace(/\s*#+$/, '');
+                              if (!clean) return '';
+                              return `<p class="content-paragraph">${fmt(clean)}</p>`;
                             }).join('');
                           })()
                         }}
