@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import axios from '../api/axiosConfig';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,6 +23,7 @@ import {
 
 export default function Profile() {
   const { user, setUser } = useAuth();
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -98,7 +100,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen text-white pt-24 pb-12" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+    <div className="min-h-screen text-white pt-24 pb-12" style={isDark ? { background: 'linear-gradient(to right, #000001, #000000)' } : { background: '#F8FAFC', color: '#111827' }}>
       {/* Background Decor */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px]" />

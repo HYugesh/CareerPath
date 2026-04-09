@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "../api/axiosConfig";
 import Editor from "@monaco-editor/react";
+import { useTheme } from "../context/ThemeContext";
+import { useNavigate } from "react-router-dom";
 import {
   Code2,
   Play,
@@ -307,7 +309,9 @@ const extractFunctionName = (code: string): string => {
 
 // --- Components ---
 
-const GeminiCodeArena = () => {
+const GeminiCodeArena = ({ embedded = false }: { embedded?: boolean }) => {
+  const { isDark } = useTheme();
+  const navigate = useNavigate();
   const [view, setView] = useState<ViewType>("setup");
   const [loading, setLoading] = useState(false);
 
@@ -1435,40 +1439,51 @@ const GeminiCodeArena = () => {
   // --- Setup View ---
   if (view === "setup") {
     return (
-      <div className="min-h-screen text-slate-300 font-sans p-8 flex flex-col items-center justify-center" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
-        {/* Header Section */}
+      <div
+        className={`${embedded ? 'h-full' : 'min-h-screen'} font-sans flex flex-col items-center justify-start pt-16 px-2 py-2 ${isDark ? 'text-slate-300' : 'text-gray-700 setup-page'}`}
+        style={isDark ? { background: 'linear-gradient(to right, #000001, #000000)' } : {}}
+      >
+        {/* Header */}
         <div className="flex flex-col items-center mb-2">
-          <div className="w-10 h-10 bg-gray-900 border border-slate-700 rounded-xl flex items-center justify-center mb-2 shadow-lg shadow-cyan-500/10">
+          {!embedded && (
+            <button
+              onClick={() => navigate('/coding')}
+              className={`self-start flex items-center gap-1.5 text-xs font-medium mb-6 transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <ChevronLeft size={14} /> Back to Hub
+            </button>
+          )}
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 shadow-lg ${isDark ? 'bg-gray-900 border border-slate-700 shadow-cyan-500/10' : 'bg-white border border-blue-100 shadow-blue-100'}`}>
             <Cpu className="text-[#60A5FA]" size={20} />
           </div>
-          <h1 className="text-4xl font-bold text-[#22D3EE] mb-1 tracking-tight">CodeArena</h1>
-          <p className="text-slate-500 text-xs">Master Data Structures & Algorithms with an AI-powered adaptive interview environment.</p>
+          <h1 className="text-3xl font-bold text-[#22D3EE] mb-1 tracking-tight">CodeArena</h1>
+          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+            Master Data Structures & Algorithms with an AI-powered adaptive interview environment.
+          </p>
         </div>
 
         {/* Main Setup Card */}
-        <div className="w-full max-w-4xl bg-gray-900/80 border border-slate-800 rounded-[2rem] p-4 backdrop-blur-sm relative overflow-hidden">
-          {/* Subtle top-right gradient glow */}
+        <div className={`w-full max-w-4xl rounded-[2rem] p-4 relative overflow-hidden ${isDark ? 'bg-gray-900/80 border border-slate-800 backdrop-blur-sm' : 'setup-card'}`}>
           <div className="absolute top-0 right-0 w-64 h-1 bg-gradient-to-l from-[#10B981] to-transparent opacity-50" />
 
           <div className="grid grid-cols-12 gap-4">
-            {/* Left Column: Topic Selection */}
+            {/* Left: Topic Selection */}
             <div className="col-span-6">
-              <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-widest text-[#60A5FA]">
-                <BookOpen size={14} />
-                SELECT TOPIC
+              <div className={`flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-widest ${isDark ? 'text-[#60A5FA]' : 'text-[#6B7280]'}`}>
+                <BookOpen size={14} /> SELECT TOPIC
               </div>
-              <div className={`grid grid-cols-2 gap-1 pr-2 ${questionMode === "Previous"
-                ? "max-h-[180px] overflow-y-auto custom-scrollbar"
-                : "max-h-fit"
-                }`}>
+              <div className="grid grid-cols-2 gap-1 pr-1 setup-topic-scroll max-h-[220px]">
                 {topics.map((topic) => (
                   <button
                     key={topic.name}
                     onClick={() => setSelectedTopic(topic.name)}
-                    className={`text-left px-3 py-2 rounded-lg text-sm transition-all border ${selectedTopic === topic.name
-                      ? "bg-[#2563EB] border-[#3B82F6] text-white shadow-lg shadow-blue-500/20"
-                      : "bg-gray-900 border-slate-800 text-slate-400 hover:border-slate-600"
-                      }`}
+                    className={`text-left px-3 py-2 rounded-lg text-sm transition-all border ${
+                      selectedTopic === topic.name
+                        ? "bg-[#2563EB] border-[#3B82F6] text-white shadow-lg shadow-blue-500/20"
+                        : isDark
+                          ? "bg-gray-900 border-slate-800 text-slate-400 hover:border-slate-600"
+                          : "setup-topic-btn"
+                    }`}
                   >
                     {topic.name}
                   </button>
@@ -1476,23 +1491,21 @@ const GeminiCodeArena = () => {
               </div>
             </div>
 
-            {/* Right Column: Settings */}
+            {/* Right: Settings */}
             <div className="col-span-6 flex flex-col gap-3">
               {/* Difficulty */}
               <div>
-                <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest text-yellow-500">
+                <div className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest ${isDark ? 'text-yellow-500' : 'text-[#6B7280]'}`}>
                   <Zap size={14} /> DIFFICULTY
                 </div>
-                <div className="flex bg-black/40 p-1 rounded-lg border border-slate-800">
+                <div className={`flex p-1 rounded-lg border ${isDark ? 'bg-black/40 border-slate-800' : 'setup-toggle-group setup-toggle-emerald'}`}>
                   {(["Easy", "Medium", "Hard"] as Difficulty[]).map((lvl) => (
-                    <button
-                      key={lvl}
-                      onClick={() => setDifficulty(lvl)}
-                      className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${difficulty === lvl
-                        ? "bg-[#113230] text-[#14B8A6]"
-                        : "text-slate-500 hover:text-slate-300"
-                        }`}
-                    >
+                    <button key={lvl} onClick={() => setDifficulty(lvl)}
+                      className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                        difficulty === lvl
+                          ? isDark ? "bg-[#113230] text-[#14B8A6]" : "setup-toggle-active-emerald"
+                          : isDark ? "text-slate-500 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"
+                      }`}>
                       {lvl}
                     </button>
                   ))}
@@ -1501,19 +1514,17 @@ const GeminiCodeArena = () => {
 
               {/* Time Limit */}
               <div>
-                <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest text-[#38BDF8]">
+                <div className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest ${isDark ? 'text-[#38BDF8]' : 'text-sky-500'}`}>
                   <Clock size={14} /> TIME LIMIT
                 </div>
-                <div className="flex bg-black/40 p-1 rounded-lg border border-slate-800">
+                <div className={`flex p-1 rounded-lg border ${isDark ? 'bg-black/40 border-slate-800' : 'setup-toggle-group setup-toggle-sky'}`}>
                   {[15, 30, 45, 60, null].map((time) => (
-                    <button
-                      key={time || "inf"}
-                      onClick={() => setTimeLimit(time)}
-                      className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${timeLimit === time
-                        ? "bg-[#0B2C3B] text-[#38BDF8]"
-                        : "text-slate-500 hover:text-slate-300"
-                        }`}
-                    >
+                    <button key={time || "inf"} onClick={() => setTimeLimit(time)}
+                      className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                        timeLimit === time
+                          ? isDark ? "bg-[#0B2C3B] text-[#38BDF8]" : "setup-toggle-active-sky"
+                          : isDark ? "text-slate-500 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"
+                      }`}>
                       {time ? `${time} min` : "∞"}
                     </button>
                   ))}
@@ -1522,21 +1533,28 @@ const GeminiCodeArena = () => {
 
               {/* Count Slider */}
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#60A5FA]">
+                <div className="flex justify-between items-center mb-3">
+                  <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${isDark ? 'text-[#60A5FA]' : 'text-violet-500'}`}>
                     <Settings size={14} /> COUNT
                   </div>
-                  <span className="text-2xl font-bold text-[#60A5FA]">{count}</span>
+                  <span className={`text-2xl font-bold ${isDark ? 'text-[#60A5FA]' : 'text-violet-500'}`}>{count}</span>
                 </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  value={count}
-                  onChange={(e) => setCount(parseInt(e.target.value))}
-                  className="w-full accent-[#60A5FA] bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between mt-3 text-[10px] text-slate-500 font-bold uppercase">
+                <div className={`relative h-2 rounded-full ${isDark ? 'bg-slate-800' : 'setup-slider-track'}`}>
+                  <div
+                    className={`absolute left-0 top-0 h-full rounded-full ${isDark ? 'bg-blue-500' : 'setup-slider-fill'}`}
+                    style={{ width: `${((count - 1) / 4) * 100}%` }}
+                  />
+                  <input
+                    type="range" min="1" max="5" value={count}
+                    onChange={(e) => setCount(parseInt(e.target.value))}
+                    className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10`}
+                  />
+                  <div
+                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white shadow-md ${isDark ? 'bg-blue-500' : 'setup-slider-thumb'}`}
+                    style={{ left: `calc(${((count - 1) / 4) * 100}% - 8px)` }}
+                  />
+                </div>
+                <div className={`flex justify-between mt-2 text-[10px] font-bold uppercase ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                   <span>1 Problem</span>
                   <span>5 Problems</span>
                 </div>
@@ -1544,59 +1562,39 @@ const GeminiCodeArena = () => {
 
               {/* Question Mode */}
               <div>
-                <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest text-[#22D3EE]">
+                <div className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest ${isDark ? 'text-[#22D3EE]' : 'text-violet-500'}`}>
                   <History size={14} /> QUESTION MODE
                 </div>
-                <div className="flex bg-black/40 p-1 rounded-lg border border-slate-800 gap-1">
-                  <button
-                    onClick={() => setQuestionMode("New")}
-                    className={`flex-1 py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1 ${questionMode === "New"
-                      ? "bg-[#1E293B] text-[#22D3EE]"
-                      : "text-slate-500 hover:text-slate-300"
-                      }`}
-                  >
-                    <span className="text-sm">+</span> New
-                  </button>
-                  <button
-                    onClick={() => setQuestionMode("Previous")}
-                    className={`flex-1 py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1 ${questionMode === "Previous"
-                      ? "bg-[#1E293B] text-[#22D3EE]"
-                      : "text-slate-500 hover:text-slate-300"
-                      }`}
-                  >
-                    <History size={12} /> Previous
-                  </button>
+                <div className={`flex p-1 rounded-lg border gap-1 ${isDark ? 'bg-black/40 border-slate-800' : 'setup-toggle-group setup-toggle-violet'}`}>
+                  {(["New", "Previous"] as QuestionMode[]).map((mode) => (
+                    <button key={mode} onClick={() => setQuestionMode(mode)}
+                      className={`flex-1 py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1 ${
+                        questionMode === mode
+                          ? isDark ? "bg-[#1E293B] text-[#22D3EE]" : "setup-toggle-active-violet"
+                          : isDark ? "text-slate-500 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"
+                      }`}>
+                      {mode === "New" ? <><span className="text-sm">+</span> New</> : <><History size={12} /> Previous</>}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Footer actions */}
-          <div className="mt-3 pt-3 border-t border-slate-800/50 flex justify-between items-center">
-            <button
-              onClick={() => setView("history")}
-              className="flex items-center gap-2 text-slate-500 text-sm font-bold hover:text-slate-300"
-            >
+          {/* Footer */}
+          <div className={`mt-3 pt-3 border-t flex justify-between items-center ${isDark ? 'border-slate-800/50' : 'border-gray-100'}`}>
+            <button onClick={() => setView("history")}
+              className={`flex items-center gap-2 text-sm font-bold transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-gray-400 hover:text-gray-600'}`}>
               <History size={18} /> View History ({questionHistory.length})
             </button>
-            <button
-              onClick={generateQuestions}
-              disabled={loading || !selectedTopic}
-              className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${loading || !selectedTopic
-                ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-                : "bg-[#2563EB] hover:bg-[#4d51e0] text-white shadow-blue-500/30"
-                }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating Questions...
-                </>
-              ) : (
-                <>
-                  {questionMode === "Previous" ? "Load Previous" : "Begin Challenge"} <ChevronRight size={20} />
-                </>
-              )}
+            <button onClick={generateQuestions} disabled={loading || !selectedTopic}
+              className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${
+                loading || !selectedTopic
+                  ? isDark ? "bg-slate-700 text-slate-500 cursor-not-allowed" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-[#2563EB] hover:bg-[#4d51e0] text-white shadow-blue-500/30"
+              }`}>
+              {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating Questions...</>
+                : <>{questionMode === "Previous" ? "Load Previous" : "Begin Challenge"} <ChevronRight size={20} /></>}
             </button>
           </div>
         </div>
@@ -1607,19 +1605,27 @@ const GeminiCodeArena = () => {
   // --- History View ---
   if (view === "history") {
     return (
-      <div className="min-h-screen text-slate-300 font-sans p-24" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+      <div
+        className={`${embedded ? 'h-full overflow-y-auto' : 'min-h-screen'} font-sans px-6 pt-6 pb-12`}
+        style={isDark
+          ? { background: 'linear-gradient(to right, #000001, #000000)', color: '#cbd5e1' }
+          : { background: '#F8FAFC', color: '#374151' }
+        }
+      >
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setView("setup")}
-                className="flex items-center gap-2 text-slate-400 hover:text-slate-300 transition-colors"
+                className={`flex items-center gap-2 transition-colors ${isDark ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-700'}`}
               >
                 <ChevronLeft size={20} />
               </button>
-              <div className="w-px h-6 bg-slate-700"></div>
-              <h1 className="text-2xl font-bold text-[#22D3EE]">Question History</h1>
+              <div className={`w-px h-6 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`} />
+              <h1 className={`text-2xl font-bold ${isDark ? 'text-[#22D3EE]' : 'text-[#0F172A]'}`}>
+                Question History
+              </h1>
             </div>
             <button
               onClick={() => {
@@ -1628,7 +1634,7 @@ const GeminiCodeArena = () => {
                   setQuestionHistory([]);
                 }
               }}
-              className="flex items-center gap-2 text-red-400 hover:text-red-300 text-sm"
+              className="flex items-center gap-2 text-red-500 hover:text-red-600 text-sm font-medium transition-colors"
             >
               <Trash2 size={16} />
               Clear All
@@ -1638,38 +1644,49 @@ const GeminiCodeArena = () => {
           {/* History List */}
           {questionHistory.length === 0 ? (
             <div className="text-center py-16">
-              <History size={48} className="mx-auto text-slate-600 mb-4" />
-              <h3 className="text-xl font-semibold text-slate-400 mb-2">No History Yet</h3>
-              <p className="text-slate-500 mb-6">Start solving problems to build your history</p>
+              <History size={48} className={`mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-gray-300'}`} />
+              <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>No History Yet</h3>
+              <p className={`mb-6 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Start solving problems to build your history</p>
               <button
                 onClick={() => setView("setup")}
-                className="px-6 py-3 bg-[#2563EB] hover:bg-[#4d51e0] text-white rounded-lg font-medium transition-colors"
+                className="px-6 py-3 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg font-medium transition-colors shadow-md"
               >
                 Start Coding
               </button>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {questionHistory.map((entry) => (
                 <div
                   key={entry.id}
-                  className="bg-gray-900/80 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition-colors"
+                  className={`rounded-xl p-5 border transition-all ${
+                    isDark
+                      ? 'bg-gray-900/80 border-slate-800 hover:border-slate-700'
+                      : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md'
+                  }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-white">{entry.topic}</h3>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${entry.difficulty === 'Easy' ? "bg-green-500/20 text-green-400" :
-                          entry.difficulty === 'Medium' ? "bg-yellow-500/20 text-yellow-400" :
-                            "bg-red-500/20 text-red-400"
-                          }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
+                        <h3 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+                          {entry.topic}
+                        </h3>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                          entry.difficulty === 'Easy'
+                            ? isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-50 text-green-700 border border-green-200'
+                            : entry.difficulty === 'Medium'
+                              ? isDark ? 'bg-yellow-500/20 text-yellow-400' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
                           {entry.difficulty}
                         </span>
-                        <span className="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
-                          {entry.count} problems
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600 border border-gray-200'
+                        }`}>
+                          {entry.count} {entry.count === 1 ? 'problem' : 'problems'}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-400">
+                      <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                         {new Date(entry.timestamp).toLocaleString()}
                       </p>
                     </div>
@@ -1679,43 +1696,34 @@ const GeminiCodeArena = () => {
                         setSelectedTopic(entry.topic);
                         setDifficulty(entry.difficulty);
                         setCount(entry.count);
-
-                        // Clear editor - don't load saved code for previous sessions
                         setUserCode('');
                         setCurrentQIndex(0);
                         setResults(null);
                         setTestResults(null);
-
-                        // IMPORTANT: Reuse the original sessionId from history
-                        // This allows fetching submissions from the original session
-                        // For old history entries without sessionId, generate a new one
                         setSessionData({ 
                           sessionId: entry.sessionId || (Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9)),
                           startTime: Date.now(), 
                           attempts: [] 
                         });
-
-                        // Fetch submissions for the first question using the original sessionId
                         if (entry.questions[0]) {
                           await fetchSubmissionsForQuestion(entry.questions[0].id);
                         }
-
-                        // Request fullscreen before entering coding mode
                         try {
                           if (document.documentElement.requestFullscreen) {
                             await document.documentElement.requestFullscreen();
                             setIsFullscreen(true);
-                            console.log("✓ Fullscreen access granted - entering coding mode from history");
                             setView("coding");
                           }
                         } catch (fullscreenError) {
-                          console.error("Fullscreen request failed:", fullscreenError);
-                          // If fullscreen fails, still allow entering coding mode
                           alert("Fullscreen access was denied. You can still code, but for the best experience, please allow fullscreen access.");
                           setView("coding");
                         }
                       }}
-                      className="px-4 py-2 bg-[#2563EB] hover:bg-[#4d51e0] text-white rounded-lg text-sm font-medium transition-colors"
+                      className={`ml-4 px-4 py-2 rounded-lg text-sm font-semibold transition-all shrink-0 ${
+                        isDark
+                          ? 'bg-[#2563EB] hover:bg-[#1d4ed8] text-white'
+                          : 'bg-[#F97316] hover:bg-[#EA580C] text-white shadow-sm'
+                      }`}
                     >
                       Load Session
                     </button>
@@ -1732,7 +1740,7 @@ const GeminiCodeArena = () => {
   // --- Fullscreen Permission View ---
   if (view === "fullscreen-permission") {
     return (
-      <div className="min-h-screen text-slate-300 font-sans p-8 flex flex-col items-center justify-center" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+      <div className={`${embedded ? 'h-full' : 'min-h-screen'} text-slate-300 font-sans p-8 flex flex-col items-center justify-center`} style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
         <div className="w-full max-w-2xl bg-gray-900/80 border border-slate-800 rounded-[2rem] p-8 backdrop-blur-sm relative overflow-hidden text-center">
           {/* Subtle top gradient glow */}
           <div className="absolute top-0 right-0 w-64 h-1 bg-gradient-to-l from-[#10B981] to-transparent opacity-50" />
@@ -1837,7 +1845,7 @@ const GeminiCodeArena = () => {
     const currentQuestion = questions[currentQIndex];
 
     return (
-      <div className="h-screen flex flex-col relative coding-container overflow-hidden" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+      <div className={`${embedded ? 'h-full' : 'h-screen'} flex flex-col fixed inset-0 relative coding-container overflow-hidden ca-page`}>
         {/* Fullscreen Notification */}
         {showFullscreenNotification && (
           <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-50 bg-[#2563EB]/90 backdrop-blur-sm text-white px-6 py-3 rounded-lg shadow-xl border border-blue-400/30 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -1850,7 +1858,7 @@ const GeminiCodeArena = () => {
         )}
 
         {/* Top Header */}
-        <div className="h-12 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-4 shrink-0 z-[200]" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+        <div className="h-12 ca-topbar border-b flex items-center justify-between px-4 shrink-0 z-[200]">
           {/* Left - Session Info */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
@@ -1882,13 +1890,13 @@ const GeminiCodeArena = () => {
         </div>
 
         {/* Main Content Area - 3 Column Layout */}
-        <div className="flex-1 flex overflow-hidden min-h-0" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+        <div className="flex-1 flex overflow-hidden min-h-0 ca-page">
           {/* Left Sidebar - Questions List */}
           {problemPanelVisible ? (
             <>
-              <div style={{ width: `${problemPanelWidth}%` }} className="bg-[#1E1E1E] border-r border-[#3E3E42] flex flex-col overflow-hidden">
+              <div style={{ width: `${problemPanelWidth}%` }} className="ca-sidebar border-r ca-border flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-3" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+                <div className="h-10 ca-panel-header border-b ca-border flex items-center justify-between px-3">
                   <span className="text-xs font-semibold text-slate-300 uppercase">Questions</span>
                   <button
                     onClick={() => setProblemPanelVisible(false)}
@@ -1900,7 +1908,7 @@ const GeminiCodeArena = () => {
                 </div>
 
                 {/* Questions List */}
-                <div className="flex-1 overflow-y-auto" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+                <div className="flex-1 overflow-y-auto ca-page">
                   {questions.map((q, index) => (
                     <button
                       key={q.id}
@@ -1916,9 +1924,9 @@ const GeminiCodeArena = () => {
                         // Fetch submissions for this question
                         await fetchSubmissionsForQuestion(q.id);
                       }}
-                      className={`w-full text-left px-3 py-2.5 border-b border-[#3E3E42] transition-colors ${currentQIndex === index
-                        ? 'bg-[#2D2D30] border-l-2 border-l-[#3B82F6]'
-                        : 'hover:bg-[#252526]'
+                      className={`w-full text-left px-3 py-2.5 border-b ca-border transition-colors ${currentQIndex === index
+                        ? 'ca-q-active border-l-2 border-l-[#3B82F6]'
+                        : 'ca-q-hover'
                         }`}
                     >
                       <div className="flex items-center gap-2">
@@ -1946,7 +1954,7 @@ const GeminiCodeArena = () => {
             /* Show Questions Button (when hidden) */
             <button
               onClick={() => setProblemPanelVisible(true)}
-              className="w-8 bg-[#252526] border-r border-[#3E3E42] hover:bg-[#2D2D30] transition-colors flex items-center justify-center"
+              className="w-8 ca-panel-header border-r ca-border hover:ca-hover transition-colors flex items-center justify-center"
               title="Show questions panel"
             >
               <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -1958,16 +1966,16 @@ const GeminiCodeArena = () => {
             style={{
               width: `${100 - (problemPanelVisible ? problemPanelWidth : 0) - (resultsPanelVisible ? resultsPanelWidth : 0)}%`
             }}
-            className="bg-[#1E1E1E] flex flex-col overflow-hidden"
+            className="ca-content flex flex-col overflow-hidden"
           >
 
             {/* Tabs */}
-            <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+            <div className="h-10 ca-panel-header border-b ca-border flex items-center px-3 gap-4">
               <button
                 onClick={() => setMiddleTab("problem")}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors ${middleTab === "problem"
-                  ? 'text-white border-b-2 border-[#3B82F6]'
-                  : 'text-slate-400 hover:text-slate-300'
+                  ? 'ca-tab-active border-b-2 border-[#3B82F6]'
+                  : 'ca-tab-inactive'
                   }`}
               >
                 Description
@@ -1975,8 +1983,8 @@ const GeminiCodeArena = () => {
               <button
                 onClick={() => setMiddleTab("results")}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors ${middleTab === "results"
-                  ? 'text-white border-b-2 border-[#3B82F6]'
-                  : 'text-slate-400 hover:text-slate-300'
+                  ? 'ca-tab-active border-b-2 border-[#3B82F6]'
+                  : 'ca-tab-inactive'
                   }`}
               >
                 Submissions
@@ -1984,16 +1992,16 @@ const GeminiCodeArena = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+            <div className="flex-1 overflow-y-auto p-6 ca-page">
               {middleTab === "problem" && (
                 <div className="space-y-6 max-w-4xl">
                   {/* Title */}
-                  <h2 className="text-2xl font-bold text-white">
+                  <h2 className="text-2xl font-bold ca-heading">
                     {currentQuestion?.title}
                   </h2>
 
                   {/* Description */}
-                  <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                  <div className="ca-body-text text-sm leading-relaxed whitespace-pre-wrap">
                     {currentQuestion?.description}
                   </div>
 
@@ -2001,25 +2009,25 @@ const GeminiCodeArena = () => {
                   {currentQuestion?.examples && currentQuestion.examples.length > 0 && (
                     <div className="space-y-4">
                       {currentQuestion.examples.map((ex, i) => (
-                        <div key={i} className="bg-[#252526] rounded-lg p-4 border border-[#3E3E42]">
-                          <div className="text-sm font-semibold text-slate-300 mb-3">
+                        <div key={i} className="ca-example-block rounded-lg p-4 border ca-border">
+                          <div className="text-sm font-semibold ca-label mb-3">
                             Example {i + 1}:
                           </div>
                           <div className="space-y-2">
                             <div>
-                              <span className="text-slate-400 text-xs font-semibold">Input:</span>
-                              <pre className="bg-[#1E1E1E] p-3 rounded mt-1 text-sm text-slate-300 overflow-x-auto font-mono">
+                              <span className="ca-muted text-xs font-semibold">Input:</span>
+                              <pre className="ca-code-block p-3 rounded mt-1 text-sm overflow-x-auto font-mono">
                                 {ex.input}
                               </pre>
                             </div>
                             <div>
-                              <span className="text-slate-400 text-xs font-semibold">Output:</span>
-                              <pre className="bg-[#1E1E1E] p-3 rounded mt-1 text-sm text-slate-300 overflow-x-auto font-mono">
+                              <span className="ca-muted text-xs font-semibold">Output:</span>
+                              <pre className="ca-code-block p-3 rounded mt-1 text-sm overflow-x-auto font-mono">
                                 {ex.output}
                               </pre>
                             </div>
                             {ex.explanation && (
-                              <div className="text-slate-400 text-xs mt-2">
+                              <div className="ca-muted text-xs mt-2">
                                 <span className="font-semibold">Explanation:</span> {ex.explanation}
                               </div>
                             )}
@@ -2032,10 +2040,10 @@ const GeminiCodeArena = () => {
                   {/* Constraints */}
                   {currentQuestion?.constraints && currentQuestion.constraints.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-white mb-3">
+                      <h3 className="text-lg font-semibold ca-heading mb-3">
                         Constraints:
                       </h3>
-                      <ul className="list-disc list-inside space-y-1 text-slate-300 text-sm">
+                      <ul className="list-disc list-inside space-y-1 ca-body-text text-sm">
                         {currentQuestion.constraints.map((constraint, i) => (
                           <li key={i}>{constraint}</li>
                         ))}
@@ -2047,7 +2055,7 @@ const GeminiCodeArena = () => {
 
               {middleTab === "results" && (
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-white">Submissions</h3>
+                  <h3 className="text-xl font-bold ca-heading">Submissions</h3>
 
                   {loadingSubmissions ? (
                     <div className="flex items-center justify-center py-12">
@@ -2056,61 +2064,44 @@ const GeminiCodeArena = () => {
                   ) : submissions.length > 0 ? (
                     <div className="space-y-4">
                       {submissions.map((submission, idx) => (
-                        <div key={submission._id} className="bg-[#252526] rounded-lg border border-[#3E3E42] overflow-hidden">
+                        <div key={submission._id} className="ca-card rounded-lg border ca-border overflow-hidden">
                           {/* Submission Header */}
-                          <div className="p-4 border-b border-[#3E3E42]">
+                          <div className="p-4 border-b ca-border">
                             <div className="flex items-center justify-between mb-3">
-                              <span className="text-sm font-semibold text-slate-300">
+                              <span className="text-sm font-semibold ca-label">
                                 Submission #{submissions.length - idx}
                               </span>
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs ca-muted">
                                 {new Date(submission.submittedAt).toLocaleString()}
                               </span>
                             </div>
-
-                            {/* Summary Stats */}
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <span className="text-xs text-slate-400">Test Cases Passed:</span>
-                                <div className={`text-lg font-bold mt-1 ${submission.testResults.passed === submission.testResults.total
-                                  ? 'text-green-400'
-                                  : 'text-yellow-400'
-                                  }`}>
+                                <span className="text-xs ca-muted">Test Cases Passed:</span>
+                                <div className={`text-lg font-bold mt-1 ${submission.testResults.passed === submission.testResults.total ? 'text-green-400' : 'text-yellow-400'}`}>
                                   {submission.testResults.passed} / {submission.testResults.total}
                                 </div>
                               </div>
                               <div>
-                                <span className="text-xs text-slate-400">Score:</span>
-                                <div className="text-lg font-bold text-[#3B82F6] mt-1">
-                                  {submission.testResults.score}%
-                                </div>
+                                <span className="text-xs ca-muted">Score:</span>
+                                <div className="text-lg font-bold text-[#3B82F6] mt-1">{submission.testResults.score}%</div>
                               </div>
                             </div>
                           </div>
-
-                          {/* View Code Button */}
                           <button
-                            onClick={() => {
-                              if (expandedSubmissionId === submission._id) {
-                                setExpandedSubmissionId(null);
-                              } else {
-                                setExpandedSubmissionId(submission._id);
-                              }
-                            }}
-                            className="w-full bg-[#1E1E1E] hover:bg-[#2D2D30] text-slate-300 px-4 py-2 transition-all flex items-center justify-center gap-2 text-sm"
+                            onClick={() => { if (expandedSubmissionId === submission._id) { setExpandedSubmissionId(null); } else { setExpandedSubmissionId(submission._id); } }}
+                            className="w-full ca-btn-secondary px-4 py-2 transition-all flex items-center justify-center gap-2 text-sm"
                           >
                             <Code2 className="w-4 h-4" />
                             {expandedSubmissionId === submission._id ? 'Hide Code' : 'View Code'}
                           </button>
-
-                          {/* Submitted Code Display */}
                           {expandedSubmissionId === submission._id && (
-                            <div className="border-t border-[#3E3E42]">
-                              <div className="bg-[#252526] px-4 py-2 border-b border-[#3E3E42] flex items-center justify-between">
-                                <span className="text-xs font-semibold text-slate-400">CODE</span>
-                                <span className="text-xs text-slate-500">{submission.language}</span>
+                            <div className="border-t ca-border">
+                              <div className="ca-panel-header px-4 py-2 border-b ca-border flex items-center justify-between">
+                                <span className="text-xs font-semibold ca-muted">CODE</span>
+                                <span className="text-xs ca-muted">{submission.language}</span>
                               </div>
-                              <pre className="p-4 text-xs text-slate-300 overflow-x-auto font-mono bg-[#1E1E1E] max-h-[400px] overflow-y-auto">
+                              <pre className="p-4 text-xs ca-body-text overflow-x-auto font-mono ca-code-block max-h-[400px] overflow-y-auto">
                                 {submission.code}
                               </pre>
                             </div>
@@ -2122,22 +2113,17 @@ const GeminiCodeArena = () => {
                     /* Show current session result if no database submissions */
                     <div className="space-y-6">
                       {/* Summary Card */}
-                      <div className="bg-[#252526] rounded-lg p-6 border border-[#3E3E42]">
+                      <div className="ca-card rounded-lg p-6 border ca-border">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-300 text-lg">Test Cases Passed:</span>
-                            <span className={`font-bold text-2xl ${testResults.summary.passed === testResults.summary.total
-                              ? 'text-green-400'
-                              : 'text-yellow-400'
-                              }`}>
+                            <span className="ca-label text-lg">Test Cases Passed:</span>
+                            <span className={`font-bold text-2xl ${testResults.summary.passed === testResults.summary.total ? 'text-green-400' : 'text-yellow-400'}`}>
                               {testResults.summary.passed} / {testResults.summary.total}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-300 text-lg">Score:</span>
-                            <span className="font-bold text-2xl text-[#3B82F6]">
-                              {testResults.summary.score}%
-                            </span>
+                            <span className="ca-label text-lg">Score:</span>
+                            <span className="font-bold text-2xl text-[#3B82F6]">{testResults.summary.score}%</span>
                           </div>
                         </div>
                       </div>
@@ -2153,12 +2139,12 @@ const GeminiCodeArena = () => {
 
                       {/* Submitted Code Display */}
                       {showSubmittedCode && (
-                        <div className="bg-[#1E1E1E] rounded-lg border border-[#3E3E42] overflow-hidden">
-                          <div className="bg-[#252526] px-4 py-2 border-b border-[#3E3E42] flex items-center justify-between">
-                            <span className="text-sm font-semibold text-slate-300">Submitted Code</span>
-                            <span className="text-xs text-slate-400">{language}</span>
+                        <div className="ca-code-block rounded-lg border ca-border overflow-hidden">
+                          <div className="ca-panel-header px-4 py-2 border-b ca-border flex items-center justify-between">
+                            <span className="text-sm font-semibold ca-label">Submitted Code</span>
+                            <span className="text-xs ca-muted">{language}</span>
                           </div>
-                          <pre className="p-4 text-sm text-slate-300 overflow-x-auto font-mono max-h-[500px] overflow-y-auto">
+                          <pre className="p-4 text-sm ca-body-text overflow-x-auto font-mono max-h-[500px] overflow-y-auto">
                             {userCode}
                           </pre>
                         </div>
@@ -2185,23 +2171,23 @@ const GeminiCodeArena = () => {
                 onMouseDown={() => setIsResizingResults(true)}
               />
 
-              <div style={{ width: `${resultsPanelWidth}%` }} className="bg-[#1E1E1E] border-l border-[#3E3E42] flex flex-col overflow-hidden editor-panel-container">
+              <div style={{ width: `${resultsPanelWidth}%` }} className="ca-editor-panel border-l ca-border flex flex-col overflow-hidden editor-panel-container">
                 {/* Editor Section */}
-                <div style={{ height: `${100 - testCasesPanelHeight}%` }} className="flex flex-col overflow-hidden border-b border-[#3E3E42]">
+                <div style={{ height: `${100 - testCasesPanelHeight}%` }} className="flex flex-col overflow-hidden border-b ca-border">
                   {/* Editor Header */}
-                  <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center justify-between px-3 z-[200] relative" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+                  <div className="h-10 ca-panel-header border-b ca-border flex items-center justify-between px-3 z-[200] relative">
                     {/* Language Selector (moved from right) */}
                     <div className="relative language-dropdown">
                       <button
                         onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                        className="flex items-center gap-2 bg-[#3E3E42] hover:bg-[#4E4E52] text-slate-300 px-3 py-1 rounded text-xs font-medium transition-all"
+                        className="flex items-center gap-2 ca-lang-btn px-3 py-1 rounded text-xs font-medium transition-all"
                       >
                         <span>{language}</span>
                         <ChevronDown className="w-3 h-3" />
                       </button>
 
                       {showLanguageDropdown && (
-                        <div className="absolute top-full left-0 mt-1 bg-[#252526] border border-[#3E3E42] rounded-lg shadow-xl z-[300] min-w-[140px] max-h-[300px] overflow-y-auto">
+                        <div className="absolute top-full left-0 mt-1 ca-dropdown rounded-lg shadow-xl z-[300] min-w-[140px] max-h-[300px] overflow-y-auto">
                           {(["JavaScript", "Python", "Java", "C++", "C", "C#", "Ruby", "Go", "Rust", "PHP", "TypeScript", "Kotlin", "R"] as Language[]).map((lang) => (
                             <button
                               key={lang}
@@ -2246,7 +2232,7 @@ const GeminiCodeArena = () => {
                       language={getMonacoLanguage(language)}
                       value={userCode}
                       onChange={(value) => setUserCode(value || "")}
-                      theme="vs-dark"
+                      theme={isDark ? "vs-dark" : "vs"}
                       options={{
                         fontSize: 13,
                         fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
@@ -2270,46 +2256,37 @@ const GeminiCodeArena = () => {
                   onMouseDown={() => setIsResizingTestCases(true)}
                 />
 
-                {/* Test Cases / Results Section */}
-                <div style={{ height: `${testCasesPanelHeight}%` }} className="flex flex-col overflow-hidden" >
+                  {/* Test Cases / Results Section */}
+                  <div style={{ height: `${testCasesPanelHeight}%` }} className="flex flex-col overflow-hidden">
                   {/* Tabs */}
-                  <div className="h-10 bg-[#252526] border-b border-[#3E3E42] flex items-center px-3 gap-4" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+                  <div className="h-10 ca-panel-header border-b ca-border flex items-center px-3 gap-4">
                     <button
                       onClick={() => setTestCasesTab("cases")}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "cases"
-                        ? "text-white border-b-2 border-[#3B82F6]"
-                        : "text-slate-400 hover:text-slate-300"
-                        }`}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "cases" ? "ca-tab-active border-b-2 border-[#3B82F6]" : "ca-tab-inactive"}`}
                     >
                       Test Cases
                     </button>
                     <button
                       onClick={() => setTestCasesTab("results")}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "results"
-                        ? "text-white border-b-2 border-[#3B82F6]"
-                        : "text-slate-400 hover:text-slate-300"
-                        }`}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "results" ? "ca-tab-active border-b-2 border-[#3B82F6]" : "ca-tab-inactive"}`}
                     >
                       Test Results
                     </button>
                     <button
                       onClick={() => setTestCasesTab("custom")}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "custom"
-                        ? "text-white border-b-2 border-[#3B82F6]"
-                        : "text-slate-400 hover:text-slate-300"
-                        }`}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${testCasesTab === "custom" ? "ca-tab-active border-b-2 border-[#3B82F6]" : "ca-tab-inactive"}`}
                     >
                       Input / Output
                     </button>
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 overflow-hidden bg-[#1E1E1E]" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+                  <div className="flex-1 overflow-hidden ca-page">
                     {/* Test Cases Tab - Show public test cases from description */}
                     {testCasesTab === "cases" && (
                       <div className="h-full flex">
                         {/* Test Case List */}
-                        <div className="w-32 border-r border-[#3E3E42] bg-[#252526] p-2 space-y-2 overflow-y-auto" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+                        <div className="w-32 border-r ca-border ca-panel-header p-2 space-y-2 overflow-y-auto">
                           {currentQuestion?.examples?.map((ex, index) => (
                             <button
                               key={index}
@@ -2329,18 +2306,18 @@ const GeminiCodeArena = () => {
                           {currentQuestion?.examples?.[selectedTestCaseIndex] && (
                             <>
                               <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                                <label className="text-xs font-bold ca-muted uppercase tracking-wider block mb-2">
                                   Input
                                 </label>
-                                <div className="bg-[#252526] border border-[#3E3E42] rounded px-3 py-2 text-slate-300 text-sm font-mono whitespace-pre-wrap">
+                                <div className="ca-io-box rounded px-3 py-2 text-sm font-mono whitespace-pre-wrap">
                                   {currentQuestion.examples[selectedTestCaseIndex].input}
                                 </div>
                               </div>
                               <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                                <label className="text-xs font-bold ca-muted uppercase tracking-wider block mb-2">
                                   Output
                                 </label>
-                                <div className="bg-[#252526] border border-[#3E3E42] rounded px-3 py-2 text-slate-300 text-sm font-mono whitespace-pre-wrap">
+                                <div className="ca-io-box rounded px-3 py-2 text-sm font-mono whitespace-pre-wrap">
                                   {currentQuestion.examples[selectedTestCaseIndex].output}
                                 </div>
                               </div>
@@ -2356,21 +2333,16 @@ const GeminiCodeArena = () => {
                         {testResults ? (
                           <div className="space-y-4">
                             {/* Summary */}
-                            <div className="bg-[#252526] rounded-lg p-4 border border-[#3E3E42]">
+                            <div className="ca-io-box rounded-lg p-4">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-slate-300">Test Cases Passed:</span>
-                                <span className={`font-bold ${testResults.summary.passed === testResults.summary.total
-                                  ? 'text-green-400'
-                                  : 'text-yellow-400'
-                                  }`}>
+                                <span className="text-sm ca-io-text">Test Cases Passed:</span>
+                                <span className={`font-bold ${testResults.summary.passed === testResults.summary.total ? 'text-green-400' : 'text-yellow-400'}`}>
                                   {testResults.summary.passed} / {testResults.summary.total}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-slate-300">Score:</span>
-                                <span className="font-bold text-[#3B82F6]">
-                                  {testResults.summary.score}%
-                                </span>
+                                <span className="text-sm ca-io-text">Score:</span>
+                                <span className="font-bold text-[#3B82F6]">{testResults.summary.score}%</span>
                               </div>
                             </div>
 
@@ -2378,15 +2350,12 @@ const GeminiCodeArena = () => {
                             {testResults.results.map((result, index) => (
                               <div
                                 key={index}
-                                className={`bg-[#252526] rounded-lg p-4 border ${result.passed
-                                  ? 'border-green-500/30'
-                                  : 'border-red-500/30'
-                                  }`}
+                                className={`ca-io-box rounded-lg p-4 border-l-4 ${result.passed ? 'border-l-green-500' : 'border-l-red-500'}`}
                               >
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-sm font-semibold text-slate-300">
+                                  <span className="text-sm font-semibold ca-io-text">
                                     Test Case {index + 1}
-                                    {result.isHidden && <span className="ml-2 text-xs text-slate-500">(Hidden)</span>}
+                                    {result.isHidden && <span className="ml-2 text-xs opacity-60">(Hidden)</span>}
                                   </span>
                                   {result.passed ? (
                                     <CheckCircle2 className="w-5 h-5 text-green-400" />
@@ -2440,7 +2409,7 @@ const GeminiCodeArena = () => {
                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
                               Output
                             </label>
-                            <div className="bg-[#252526] border border-[#3E3E42] rounded px-3 py-2 text-slate-300 text-xs font-mono whitespace-pre-wrap min-h-[80px]">
+                            <div className="ca-io-box rounded px-3 py-2 text-xs font-mono whitespace-pre-wrap min-h-[80px] ca-io-text">
                               {testResults.results[0]?.actualOutput || testResults.results[0]?.error || "No output"}
                             </div>
                           </div>
@@ -2471,7 +2440,7 @@ const GeminiCodeArena = () => {
   // --- Performance Analysis View ---
   if (view === "performance-analysis") {
     return (
-      <div className="min-h-screen text-slate-300 font-sans p-20" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+      <div className={`${embedded ? 'h-full overflow-y-auto' : 'min-h-screen'} text-slate-300 font-sans ${embedded ? 'p-8' : 'p-20'}`} style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">

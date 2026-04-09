@@ -624,7 +624,7 @@ export default function Roadmap() {
   const hasRoadmaps = roadmaps.length > 0;
 
   return (
-    <div className="min-h-screen bg-black text-white pt-20 pb-12">
+    <div className="min-h-screen bg-black text-white pt-20 pb-16">
       {/* Header with New Roadmap Button */}
       <div className="px-6 mb-8 flex justify-between items-center">
         <div>
@@ -655,7 +655,7 @@ export default function Roadmap() {
         >
           <div className="bg-gray-900 rounded-2xl p-12 text-center border border-gray-800">
             <div className="mb-8">
-              <div className="w-24 h-24 mx-auto flex items-center justify-center">
+              <div className="w-24 h-20 mx-auto flex items-center justify-center">
                 <svg
                   className="w-16 h-16 text-gray-600"
                   fill="none"
@@ -784,10 +784,10 @@ export default function Roadmap() {
       {/* Core Subjects Section - Always show */}
       <div className="px-6">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">
+          <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
             Core <span className="text-green-500">Subjects</span>
           </h2>
-          <p className="text-gray-400">
+          <p className="text-gray-500 dark:text-gray-400">
             Master fundamental computer science concepts
           </p>
         </div>
@@ -799,32 +799,28 @@ export default function Roadmap() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="bg-gray-900 rounded-xl p-6 hover:bg-gray-800 transition-colors cursor-pointer group border border-gray-800"
+              whileHover={{ y: -4, scale: 1.01 }}
+              className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 cursor-pointer group border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-lg dark:hover:shadow-green-900/10 transition-all duration-300 overflow-hidden"
             >
-              <div className={`w-12 h-12 ${subject.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+              {/* Subtle top accent line */}
+              <div className={`absolute top-0 left-0 right-0 h-0.5 ${subject.color} opacity-60 group-hover:opacity-100 transition-opacity`} />
+
+              {/* Icon */}
+              <div className={`w-12 h-12 ${subject.color} rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-md`}>
                 <span className="text-2xl">{subject.icon}</span>
               </div>
 
-              <h3 className="text-xl font-bold mb-3 group-hover:text-green-400 transition-colors">
+              <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white group-hover:text-green-500 dark:group-hover:text-green-400 transition-colors">
                 {subject.title}
               </h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
                 {subject.description}
               </p>
 
-              <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg
-                  className="w-5 h-5 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
+              <div className="mt-5 flex items-center gap-1 text-green-500 dark:text-green-400 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all translate-x-[-4px] group-hover:translate-x-0 duration-300">
+                Explore
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </div>
             </motion.div>

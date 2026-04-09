@@ -3,7 +3,9 @@ import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PageWrapper from "./components/PageWrapper";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -19,6 +21,8 @@ import Results from './pages/Results';
 import Assistant from './pages/Assistant';
 import VoiceDemo from './components/VoiceDemo';
 import GeminiCodeArena from './pages/GeminiCodeArena';
+import CodeArenaShell from './pages/CodeArenaShell';
+import OnlineCompiler from './pages/OnlineCompiler';
 import InterviewRoom from './pages/InterviewRoom';
 import InterviewLanding from './pages/InterviewLanding';
 import ForgotPassword from './pages/ForgotPassword';
@@ -62,7 +66,7 @@ function AnimatedRoutes() {
         <Route path="/interview" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
         <Route path="/interview-old" element={<Assistant />} />
         <Route path="/voice-demo" element={<ProtectedRoute><VoiceDemo /></ProtectedRoute>} />
-        <Route path="/coding" element={<ProtectedRoute><GeminiCodeArena /></ProtectedRoute>} />
+        <Route path="/coding" element={<ProtectedRoute><CodeArenaShell /></ProtectedRoute>} />
         <Route path="/interview-room" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
       </Routes>
     </AnimatePresence>
@@ -71,14 +75,18 @@ function AnimatedRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <ScrollToTop />
-        <Navbar />
-        <main className="min-h-screen">
-          <AnimatedRoutes />
-        </main>
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ScrollToTop />
+          <Navbar />
+          <PageWrapper>
+            <main className="min-h-screen">
+              <AnimatedRoutes />
+            </main>
+          </PageWrapper>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

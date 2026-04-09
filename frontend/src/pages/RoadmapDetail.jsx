@@ -288,7 +288,7 @@ export default function RoadmapDetail() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-black text-white pt-24 px-6 pb-12"
+      className="min-h-screen bg-black text-white pt-20 px-6 pb-12"
     >
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
@@ -419,9 +419,9 @@ export default function RoadmapDetail() {
                       navigate(`/roadmap/${id}/module/${module.moduleId}`);  // ← add this
                     }}
                     className={`
-                        relative p-6 rounded-xl border h-[240px] flex flex-col justify-between transition-all duration-300 group
+                        relative p-6 rounded-xl border h-[240px] flex flex-col justify-between transition-all duration-300 group overflow-hidden
                         ${isLocked
-                        ? 'bg-[#0f1115]/50 border-gray-800 cursor-not-allowed opacity-60'
+                        ? 'locked-module-card cursor-not-allowed'
                         : isActive
                           ? 'bg-[#0f1115] border-yellow-600/50 shadow-[0_0_20px_rgba(234,179,8,0.1)] hover:border-yellow-500/70 cursor-pointer'
                           : 'bg-[#0f1115] border-gray-800 hover:border-gray-700/80 hover:bg-[#13161c] cursor-pointer'
@@ -432,9 +432,9 @@ export default function RoadmapDetail() {
                       {/* Header Badge */}
                       <div className="flex justify-between items-start mb-4">
                         <span className={`
-                                text-[10px] font-bold px-2 py-1 rounded-md
-                                ${isLocked ? 'bg-gray-800 text-gray-500' : isActive ? 'bg-yellow-600 text-white' : 'bg-green-600 text-white'}
-                            `}>
+                            text-[10px] font-bold px-2 py-1 rounded-md
+                            ${isLocked ? 'locked-module-badge' : isActive ? 'bg-yellow-600 text-white' : 'bg-green-600 text-white'}
+                        `}>
                           M{module.moduleId}
                         </span>
                         {isLocked && (
@@ -445,19 +445,19 @@ export default function RoadmapDetail() {
                       </div>
 
                       {/* Title */}
-                      <h3 className={`font-bold text-lg leading-tight mb-2 line-clamp-2 ${isActive ? 'text-white' : isLocked ? 'text-gray-500' : 'text-gray-200'}`}>
+                      <h3 className={`font-bold text-lg leading-tight mb-2 line-clamp-2 ${isActive ? 'text-white' : isLocked ? 'locked-module-title' : 'text-gray-200'}`}>
                         {module.title}
                       </h3>
 
                       {/* Description */}
-                      <p className="text-gray-500 text-xs line-clamp-3 leading-relaxed">
+                      <p className={`text-xs line-clamp-3 leading-relaxed ${isLocked ? 'locked-module-desc' : 'text-gray-500'}`}>
                         {module.objective}
                       </p>
                     </div>
 
                     {/* Footer Status */}
                     <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800/50">
-                      <span className="text-gray-500 text-xs font-mono">
+                      <span className={`text-xs font-mono ${isLocked ? 'locked-module-topics' : 'text-gray-500'}`}>
                         {module.subComponents?.length || 0} topics
                       </span>
                       <span className={`
@@ -467,7 +467,7 @@ export default function RoadmapDetail() {
                           : isActive
                             ? 'bg-[#3A2D0C] text-yellow-500 border border-yellow-700/30'
                             : isLocked
-                              ? 'bg-gray-800/50 text-gray-600 border border-gray-700/50'
+                              ? 'locked-module-pill'
                               : 'bg-gray-800 text-gray-500 border border-gray-700'
                         }
                         `}>

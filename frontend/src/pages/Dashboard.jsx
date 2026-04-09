@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "../api/axiosConfig";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { Link } from "react-router-dom";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -26,6 +27,7 @@ import PortfolioLinks from "../components/PortfolioLinks";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const [roadmaps, setRoadmaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -116,7 +118,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen text-white pb-20 pt-24" style={{ background: 'linear-gradient(to right, #000001, #000000)' }}>
+    <div className="min-h-screen text-white pb-20 pt-24" style={isDark ? { background: 'linear-gradient(to right, #000001, #000000)' } : { background: '#F8FAFC', color: '#111827' }}>
       {/* Background Decor */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[120px]" />
@@ -204,6 +206,7 @@ export default function Dashboard() {
                     onDelete={handleDelete}
                     completedSteps={getCompletedStepsCount(roadmap)}
                     totalSteps={getTotalStepsCount(roadmap)}
+                    isDark={isDark}
                   />
                 ))}
               </div>
@@ -223,6 +226,7 @@ export default function Dashboard() {
                 title="Skill Assessment"
                 desc="Test your knowledge"
                 gradient="from-blue-600 to-cyan-600"
+                isDark={isDark}
               />
               <QuickActionCard
                 to="/interview"
@@ -230,6 +234,7 @@ export default function Dashboard() {
                 title="AI Interview"
                 desc="Practice soft skills"
                 gradient="from-cyan-600 to-emerald-600"
+                isDark={isDark}
               />
               <QuickActionCard
                 to="/coding"
@@ -237,14 +242,19 @@ export default function Dashboard() {
                 title="Code Arena"
                 desc="Solve algorithms"
                 gradient="from-emerald-600 to-teal-600"
+                isDark={isDark}
               />
             </div>
 
             {/* Daily Tip or Motivation */}
-            <div className="bg-gradient-to-br from-gray-900 to-black border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
+            <div className={`rounded-2xl p-6 relative overflow-hidden group border ${
+              isDark
+                ? 'bg-gradient-to-br from-gray-900 to-black border-white/5'
+                : 'bg-white border-gray-200 shadow-sm'
+            }`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all" />
-              <h3 className="font-bold text-lg mb-2 z-10 relative">💡 Daily Insight</h3>
-              <p className="text-gray-400 text-sm z-10 relative leading-relaxed">
+              <h3 className={`font-bold text-lg mb-2 z-10 relative ${isDark ? 'text-white' : 'text-gray-900'}`}>💡 Daily Insight</h3>
+              <p className={`text-sm z-10 relative leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 "Consistency is key. 30 minutes of coding every day is better than 5 hours once a week."
               </p>
             </div>
@@ -302,22 +312,26 @@ function StatCard({ icon, value, label, trend, color }) {
   );
 }
 
-function RoadmapCard({ roadmap, onDelete, completedSteps, totalSteps }) {
+function RoadmapCard({ roadmap, onDelete, completedSteps, totalSteps, isDark }) {
   const completed = completedSteps;
   const total = totalSteps;
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <div className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 md:p-6 hover:border-blue-500/50 transition-all duration-300">
+    <div className={`group relative backdrop-blur-md rounded-2xl p-4 md:p-6 transition-all duration-300 border ${
+      isDark
+        ? 'bg-gray-900/40 border-white/5 hover:border-blue-500/50'
+        : 'bg-white border-gray-200 hover:border-orange-300 shadow-sm hover:shadow-md'
+    }`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6">
         <div className="w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
           <CircularProgressbar
             value={percentage}
             text={`${percentage}%`}
             styles={buildStyles({
-              pathColor: percentage >= 100 ? '#10B981' : '#3B82F6',
-              textColor: '#fff',
-              trailColor: 'rgba(255,255,255,0.1)',
+              pathColor: percentage >= 100 ? '#10B981' : (isDark ? '#3B82F6' : '#F97316'),
+              textColor: isDark ? '#fff' : '#0F172A',
+              trailColor: isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
               textSize: '24px',
               pathTransitionDuration: 0.5,
             })}
@@ -327,10 +341,12 @@ function RoadmapCard({ roadmap, onDelete, completedSteps, totalSteps }) {
         <div className="flex-grow w-full sm:w-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
             <div className="flex-1">
-              <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+              <h3 className={`text-lg md:text-xl font-bold transition-colors ${
+                isDark ? 'text-white group-hover:text-blue-400' : 'text-gray-900 group-hover:text-orange-500'
+              }`}>
                 {roadmap.title || roadmap.primaryDomain || 'Untitled Roadmap'}
               </h3>
-              <p className="text-xs md:text-sm text-gray-400 mt-1">
+              <p className={`text-xs md:text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 {completed} of {total} steps completed
               </p>
             </div>
@@ -347,7 +363,11 @@ function RoadmapCard({ roadmap, onDelete, completedSteps, totalSteps }) {
           <div className="mt-4 flex flex-col sm:flex-row gap-2 md:gap-3">
             <Link
               to={`/roadmap/${roadmap._id}`}
-              className="text-xs md:text-sm font-semibold bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-white border border-white/5 transition-all flex items-center justify-center gap-2"
+              className={`text-xs md:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center justify-center gap-2 border ${
+                isDark
+                  ? 'bg-white/5 hover:bg-white/10 text-white border-white/5'
+                  : 'bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-orange-600 border-gray-200 hover:border-orange-300'
+              }`}
             >
               Continue Learning <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
             </Link>
@@ -358,21 +378,34 @@ function RoadmapCard({ roadmap, onDelete, completedSteps, totalSteps }) {
   );
 }
 
-function QuickActionCard({ to, icon, title, desc, gradient }) {
+function QuickActionCard({ to, icon, title, desc, gradient, isDark }) {
   return (
     <Link to={to} className="block group">
-      <div className={`bg-gradient-to-r ${gradient} p-[1px] rounded-2xl`}>
-        <div className="bg-gray-950 rounded-2xl p-4 flex items-center gap-4 h-full relative overflow-hidden">
-          <div className={`p-3 rounded-lg bg-gradient-to-br ${gradient} text-white group-hover:scale-110 transition-transform`}>
+      {isDark ? (
+        <div className={`bg-gradient-to-r ${gradient} p-[1px] rounded-2xl`}>
+          <div className="bg-gray-950 rounded-2xl p-4 flex items-center gap-4 h-full relative overflow-hidden">
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${gradient} text-white group-hover:scale-110 transition-transform`}>
+              {icon}
+            </div>
+            <div>
+              <h4 className="font-bold text-white">{title}</h4>
+              <p className="text-xs text-gray-400">{desc}</p>
+            </div>
+            <ArrowRight className="absolute right-4 text-white/20 group-hover:text-white/80 group-hover:translate-x-1 transition-all" />
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 hover:border-orange-300 rounded-2xl p-4 flex items-center gap-4 relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+          <div className={`p-3 rounded-lg bg-gradient-to-br ${gradient} text-white group-hover:scale-110 transition-transform shrink-0`}>
             {icon}
           </div>
           <div>
-            <h4 className="font-bold text-white">{title}</h4>
-            <p className="text-xs text-gray-400">{desc}</p>
+            <h4 className="font-bold text-gray-900">{title}</h4>
+            <p className="text-xs text-gray-500">{desc}</p>
           </div>
-          <ArrowRight className="absolute right-4 text-white/20 group-hover:text-white/80 group-hover:translate-x-1 transition-all" />
+          <ArrowRight className="absolute right-4 text-gray-300 group-hover:text-orange-400 group-hover:translate-x-1 transition-all" />
         </div>
-      </div>
+      )}
     </Link>
   );
 }

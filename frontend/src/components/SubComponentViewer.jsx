@@ -252,66 +252,92 @@ export default function SubComponentViewer({
                       <div
                         className="content-body"
                         dangerouslySetInnerHTML={{
-                          __html: subComponent.learningContent.explanation
-                            .split('\n\n')
-                            .map(paragraph => {
-                              const trimmed = paragraph.trim();
+                          __html: (() => {
+                            const raw = subComponent.learningContent.explanation;
 
-                              // Check for bold headers (e.g., **Understanding the Virtual DOM:**)
-                              if (trimmed.match(/^\*\*(.+?):\*\*$/)) {
-                                const heading = trimmed.replace(/^\*\*(.+?):\*\*$/, '$1');
-                                return `<h2 class="section-heading-bold">${heading}:</h2>`;
-                              }
-                              // Check for bold headers without colon
-                              else if (trimmed.match(/^\*\*(.+?)\*\*$/)) {
-                                const heading = trimmed.replace(/^\*\*(.+?)\*\*$/, '$1');
-                                return `<h2 class="section-heading-bold">${heading}</h2>`;
-                              }
-                              // Check for markdown headers (##)
-                              else if (trimmed.startsWith('## ')) {
-                                const heading = trimmed.replace('## ', '');
-                                return `<h2 class="section-heading">${heading}</h2>`;
-                              }
-                              // Check for markdown subheaders (###)
-                              else if (trimmed.startsWith('### ')) {
-                                const subheading = trimmed.replace('### ', '');
-                                return `<h3 class="subsection-heading">${subheading}</h3>`;
-                              }
-                              // Check for bullet points (• or - at start)
-                              else if (trimmed.match(/^[•\-]\s+\*\*(.+?):\*\*/)) {
-                                // Bullet with bold label (e.g., • **Tree Reconciliation:** description)
-                                const content = trimmed.replace(/^[•\-]\s+/, '');
-                                return `<div class="bullet-item">${content.replace(/\*\*(.+?):\*\*/, '<strong>$1:</strong>')}</div>`;
-                              }
-                              else if (trimmed.match(/^[•\-]\s+/)) {
-                                // Regular bullet point
-                                const content = trimmed.replace(/^[•\-]\s+/, '');
-                                return `<div class="bullet-item">${content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>`;
-                              }
-                              // Check for numbered lists
-                              else if (trimmed.match(/^\d+\.\s+\*\*(.+?):\*\*/)) {
-                                // Numbered with bold label
-                                const content = trimmed.replace(/^\d+\.\s+/, '');
-                                return `<div class="numbered-item">${content.replace(/\*\*(.+?):\*\*/, '<strong>$1:</strong>')}</div>`;
-                              }
-                              else if (trimmed.match(/^\d+\.\s+/)) {
-                                // Regular numbered item
-                                const content = trimmed.replace(/^\d+\.\s+/, '');
-                                const number = trimmed.match(/^(\d+)\./)[1];
-                                return `<div class="numbered-item"><span class="number">${number}.</span> ${content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>`;
-                              }
-                              // Regular paragraph
-                              else if (trimmed) {
-                                // Replace **bold** with <strong> tags and inline code
-                                let processed = trimmed
+                            // Pre-process: split inline "* item" markers into separate lines
+                            // Only match single * (not **bold**) followed by a capital letter or backtick
+                            const normalized = raw
+                              .replace(/(?<!\*)\*(?!\*)\s+(?=[A-Z`])/g, '\n\n* ')
+                              .replace(/\s+(\d+)\.\s+(?=[A-Z`])/g, '\n\n$1. ');
+
+                            return normalized
+                              .split('\n\n')
+                              .map(paragraph => {
+                                const trimmed = paragraph.trim();
+                                if (!trimmed) return '';
+
+                                // Bold headers **Header:**
+                                if (trimmed.match(/^\*\*(.+?):\*\*$/)) {
+                                  const heading = trimmed.replace(/^\*\*(.+?):\*\*$/, '$1');
+                                  return `<h2 class="section-heading-bold">${heading}:</h2>`;
+                                }
+                                // Bold headers **Header**
+                                if (trimmed.match(/^\*\*(.+?)\*\*$/)) {
+                                  const heading = trimmed.replace(/^\*\*(.+?)\*\*$/, '$1');
+                                  return `<h2 class="section-heading-bold">${heading}</h2>`;
+                                }
+                                // ## Heading
+                                if (trimmed.startsWith('## ')) {
+                                  return `<h2 class="section-heading">${trimmed.slice(3)}</h2>`;
+                                }
+                                // ### Heading
+                                if (trimmed.startsWith('### ')) {
+                                  return `<h3 class="subsection-heading">${trimmed.slice(4)}</h3>`;
+                                }
+
+                                // Multi-line bullet block (lines starting with * or -)
+                                const lines = trimmed.split('\n');
+                                const allBullets = lines.every(l => l.trim().match(/^[*\-•]\s+/));
+                                if (allBullets && lines.length > 1) {
+                                  const items = lines.map(l => {
+                                    const content = l.trim().replace(/^[*\-•]\s+/, '')
+                                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                      .replace(/`(.+?)`/g, '<code>$1</code>');
+                                    return `<li class="bullet-item">${content}</li>`;
+                                  }).join('');
+                                  return `<ul class="bullet-list">${items}</ul>`;
+                                }
+
+                                // Single bullet line
+                                if (trimmed.match(/^[*\-•]\s+/)) {
+                                  const content = trimmed.replace(/^[*\-•]\s+/, '')
+                                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                    .replace(/`(.+?)`/g, '<code>$1</code>');
+                                  return `<div class="bullet-item">${content}</div>`;
+                                }
+
+                                // Numbered list block
+                                const allNumbered = lines.every(l => l.trim().match(/^\d+\.\s+/));
+                                if (allNumbered && lines.length > 1) {
+                                  const items = lines.map(l => {
+                                    const num = l.trim().match(/^(\d+)\./)[1];
+                                    const content = l.trim().replace(/^\d+\.\s+/, '')
+                                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                      .replace(/`(.+?)`/g, '<code>$1</code>');
+                                    return `<li class="numbered-item"><span class="number">${num}.</span> ${content}</li>`;
+                                  }).join('');
+                                  return `<ol class="numbered-list">${items}</ol>`;
+                                }
+
+                                // Single numbered item
+                                if (trimmed.match(/^\d+\.\s+/)) {
+                                  const num = trimmed.match(/^(\d+)\./)[1];
+                                  const content = trimmed.replace(/^\d+\.\s+/, '')
+                                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                    .replace(/`(.+?)`/g, '<code>$1</code>');
+                                  return `<div class="numbered-item"><span class="number">${num}.</span> ${content}</div>`;
+                                }
+
+                                // Regular paragraph
+                                const processed = trimmed
                                   .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
                                   .replace(/`(.+?)`/g, '<code>$1</code>')
                                   .replace(/\*(.+?)\*/g, '<em>$1</em>');
                                 return `<p class="content-paragraph">${processed}</p>`;
-                              }
-                              return '';
-                            })
-                            .join('')
+                              })
+                              .join('');
+                          })()
                         }}
                       />
                     </div>

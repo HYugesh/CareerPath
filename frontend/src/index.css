@@ -95,6 +95,203 @@ body {
   background: linear-gradient(to right, #000001, #000000);
 }
 
+/* ============================================
+   LIGHT MODE — Full Theme Override
+   ============================================ */
+
+html.light body {
+  color: #111827;
+  background: #f0f4f8 !important;
+}
+
+/* Theme wrapper */
+.theme-light {
+  background: #f0f4f8 !important;
+  color: #111827 !important;
+  min-height: 100vh;
+}
+
+.theme-dark {
+  background: linear-gradient(to right, #000001, #000000);
+  color: #f3f4f6;
+  min-height: 100vh;
+}
+
+/* All page root containers */
+html.light .min-h-screen {
+  background: #f0f4f8 !important;
+  color: #111827 !important;
+}
+
+/* ── Scrollbar ── */
+html.light ::-webkit-scrollbar-track { background: #e2e8f0; }
+html.light ::-webkit-scrollbar-thumb { background: #3B82F6; }
+
+/* ── Navbar ── */
+html.light nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 12px rgba(0,0,0,0.08) !important;
+}
+
+/* Logo text */
+html.light nav .bg-clip-text {
+  background-image: linear-gradient(to right, #1d4ed8, #0891b2) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* Nav pill container */
+html.light nav .bg-white\/5,
+html.light nav .bg-gray-900\/60 {
+  background: rgba(241, 245, 249, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Nav links */
+html.light nav a:not(.bg-gradient-to-r) {
+  color: #374151 !important;
+}
+html.light nav a:not(.bg-gradient-to-r):hover {
+  color: #111827 !important;
+  background: rgba(0,0,0,0.05) !important;
+}
+
+/* Active nav link — keep gradient pill */
+html.light nav a.bg-gradient-to-r {
+  color: #ffffff !important;
+}
+
+/* Profile dropdown */
+html.light .bg-gray-900\/95 {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+}
+html.light .bg-gray-900\/95 p,
+html.light .bg-gray-900\/95 span {
+  color: #374151 !important;
+}
+html.light .bg-gray-900\/95 .text-gray-400 { color: #6b7280 !important; }
+html.light .bg-gray-900\/95 .text-gray-300 { color: #374151 !important; }
+html.light .bg-gray-900\/95 .border-gray-700\/50 { border-color: #e5e7eb !important; }
+html.light .bg-gray-900\/95 a:hover { background: #f3f4f6 !important; }
+
+/* ── Cards & Containers ── */
+html.light .bg-gray-950\/50,
+html.light .bg-gray-950\/30,
+html.light .bg-gray-900\/50,
+html.light .bg-gray-900\/40,
+html.light .bg-gray-900\/30,
+html.light .bg-gray-900\/20 {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light .bg-\[\#0A0E14\],
+html.light .bg-\[\#0f1115\],
+html.light .bg-\[\#0D1117\],
+html.light .bg-\[\#0a0e14\],
+html.light .bg-black {
+  background: #ffffff !important;
+}
+
+/* Card hover */
+html.light .hover\:bg-gray-900\/50:hover { background: #f8fafc !important; }
+html.light .hover\:bg-gray-900\/40:hover { background: #f1f5f9 !important; }
+html.light .hover\:bg-\[\#13161c\]:hover  { background: #f1f5f9 !important; }
+
+/* ── Borders ── */
+html.light .border-gray-800,
+html.light .border-gray-800\/50,
+html.light .border-gray-800\/40 { border-color: #e2e8f0 !important; }
+html.light .border-gray-700,
+html.light .border-gray-700\/50 { border-color: #d1d5db !important; }
+html.light .border-white\/5,
+html.light .border-white\/10 { border-color: #e2e8f0 !important; }
+
+/* ── Text ── */
+html.light .text-white          { color: #111827 !important; }
+html.light .text-gray-100       { color: #1f2937 !important; }
+html.light .text-gray-200       { color: #374151 !important; }
+html.light .text-gray-300       { color: #4b5563 !important; }
+html.light .text-gray-400       { color: #6b7280 !important; }
+html.light .text-gray-500       { color: #9ca3af !important; }
+html.light .text-gray-600       { color: #6b7280 !important; }
+html.light .text-slate-200      { color: #334155 !important; }
+html.light .text-slate-300      { color: #475569 !important; }
+
+/* Keep accent colors */
+html.light .text-blue-400       { color: #2563eb !important; }
+html.light .text-blue-500       { color: #1d4ed8 !important; }
+html.light .text-cyan-400       { color: #0891b2 !important; }
+html.light .text-green-400,
+html.light .text-green-500      { color: #16a34a !important; }
+html.light .text-yellow-400,
+html.light .text-yellow-500     { color: #d97706 !important; }
+html.light .text-red-400,
+html.light .text-red-500        { color: #dc2626 !important; }
+html.light .text-emerald-400    { color: #059669 !important; }
+html.light .text-purple-400     { color: #7c3aed !important; }
+
+/* ── Gradient text (logo, headings) ── */
+html.light .bg-clip-text.text-transparent {
+  filter: none !important;
+}
+html.light .bg-gradient-to-r.from-white.to-gray-300.bg-clip-text,
+html.light .bg-gradient-to-r.from-white.via-gray-100.to-gray-300.bg-clip-text {
+  background-image: linear-gradient(to right, #111827, #374151) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* ── Inputs & Selects ── */
+html.light input,
+html.light textarea,
+html.light select {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  color: #111827 !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder { color: #9ca3af !important; }
+html.light input:focus,
+html.light textarea:focus,
+html.light select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
+}
+
+/* ── Stat cards on Dashboard ── */
+html.light .bg-gray-900\/50.backdrop-blur-sm {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+}
+
+/* ── Progress bars ── */
+html.light .bg-gray-800,
+html.light .bg-gray-800\/50 { background: #e2e8f0 !important; }
+
+/* ── Dividers ── */
+html.light .border-t.border-gray-800,
+html.light .border-b.border-gray-800 { border-color: #e2e8f0 !important; }
+
+/* ── Mobile menu ── */
+html.light .bg-gray-950\/95 {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* ── Fixed/sticky dark headers ── */
+html.light .bg-\[\#252526\],
+html.light .bg-\[#252526\] {
+  background: #f1f5f9 !important;
+}
+html.light .border-\[\#3E3E42\] { border-color: #d1d5db !important; }
+
 /* 3D Transform utilities */
 .perspective-1000 {
   perspective: 1000px;
@@ -463,6 +660,16 @@ body {
   top: 0;
 }
 
+/* Bullet list wrapper */
+.bullet-list {
+  list-style: none;
+  margin: 0.75rem 0 1.25rem 0;
+  padding: 0;
+}
+.bullet-list .bullet-item {
+  margin-bottom: 0.6rem;
+}
+
 /* Numbered Items */
 .numbered-item {
   color: #d1d5db;
@@ -480,6 +687,16 @@ body {
   position: absolute;
   left: 0;
   top: 0;
+}
+
+/* Numbered list wrapper */
+.numbered-list {
+  list-style: none;
+  margin: 0.75rem 0 1.25rem 0;
+  padding: 0;
+}
+.numbered-list .numbered-item {
+  margin-bottom: 0.6rem;
 }
 
 /* Emphasis within content */
@@ -818,4 +1035,1874 @@ html {
 
 .content-body tr:hover {
   background: rgba(59, 130, 246, 0.05);
+}
+
+/* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+/* Prose container */
+html.light .prose-container {
+  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+html.light .content-body {
+  color: #1f2937;
+}
+
+html.light .section-heading {
+  color: #1d4ed8;
+  border-bottom-color: rgba(59, 130, 246, 0.3);
+}
+
+html.light .section-heading-bold {
+  color: #111827;
+}
+
+html.light .subsection-heading {
+  color: #2563eb;
+}
+
+html.light .content-paragraph {
+  color: #374151;
+}
+
+html.light .bullet-item,
+html.light .numbered-item {
+  color: #374151;
+}
+
+html.light .bullet-item::before {
+  color: #2563eb;
+}
+
+html.light .numbered-item .number {
+  color: #2563eb;
+}
+
+html.light .content-body strong,
+html.light .bullet-item strong,
+html.light .numbered-item strong {
+  color: #d97706;
+}
+
+html.light .content-body em {
+  color: #7c3aed;
+}
+
+html.light .content-body code {
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+/* Code blocks */
+html.light .code-example-block {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+html.light .code-header {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.08), rgba(34, 211, 238, 0.08));
+  border-bottom-color: rgba(34, 211, 238, 0.25);
+}
+
+html.light .code-description {
+  color: #6b7280;
+}
+
+html.light .copy-button {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #2563eb;
+}
+
+html.light .copy-button:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
+}
+
+/* General dark bg overrides for light mode */
+html.light .bg-black,
+html.light .bg-\[\#0A0E14\],
+html.light .bg-\[\#0f1115\],
+html.light .bg-\[\#0D1117\] {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-gray-900\/50,
+html.light .bg-gray-900\/30,
+html.light .bg-gray-900\/40 {
+  background-color: rgba(243, 244, 246, 0.8) !important;
+}
+
+html.light .border-gray-800 {
+  border-color: #e5e7eb !important;
+}
+
+html.light .border-gray-700 {
+  border-color: #d1d5db !important;
+}
+
+html.light .text-white {
+  color: #111827 !important;
+}
+
+html.light .text-gray-100 {
+  color: #1f2937 !important;
+}
+
+html.light .text-gray-200 {
+  color: #374151 !important;
+}
+
+html.light .text-gray-300 {
+  color: #4b5563 !important;
+}
+
+html.light .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+html.light .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+html.light .text-gray-600 {
+  color: #6b7280 !important;
+}
+
+
+/* ============================================
+   Assessment Page — Light Mode Color Grading
+   ============================================ */
+
+/* Page background: soft blue-white gradient */
+html.light .assessment-light-page {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 40%, #f5f0ff 100%) !important;
+  color: #111827 !important;
+  min-height: 100vh;
+}
+
+/* AI-Powered badge pill */
+html.light .assessment-badge {
+  background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(6,182,212,0.12));
+  border: 1px solid rgba(59,130,246,0.3);
+  color: #1d4ed8;
+  backdrop-filter: blur(8px);
+}
+
+/* Hero heading */
+html.light .assessment-heading {
+  color: #0f172a;
+}
+
+/* Subtitle / body text */
+html.light .assessment-subtext {
+  color: #475569;
+}
+
+/* Feature cards — frosted glass with subtle gradient border */
+html.light .assessment-feature-card {
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(59,130,246,0.18);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(59,130,246,0.08), 0 1px 4px rgba(0,0,0,0.04);
+}
+html.light .assessment-feature-card:hover {
+  border-color: rgba(59,130,246,0.4);
+  box-shadow: 0 8px 32px rgba(59,130,246,0.14), 0 2px 8px rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.95);
+}
+
+html.light .assessment-feature-title {
+  color: #0f172a;
+}
+
+html.light .assessment-feature-desc {
+  color: #64748b;
+}
+
+/* Custom quiz box */
+html.light .assessment-custom-box {
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(59,130,246,0.2);
+  box-shadow: 0 4px 24px rgba(59,130,246,0.08);
+  backdrop-filter: blur(12px);
+}
+html.light .assessment-custom-box:hover {
+  border-color: rgba(59,130,246,0.4);
+  box-shadow: 0 8px 32px rgba(59,130,246,0.12);
+}
+
+html.light .assessment-custom-title {
+  color: #0f172a;
+}
+
+html.light .assessment-label {
+  color: #374151;
+}
+
+/* Input field */
+html.light .assessment-input {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #111827;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  transition: all 0.2s;
+}
+html.light .assessment-input::placeholder {
+  color: #94a3b8;
+}
+html.light .assessment-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  outline: none;
+  background: #ffffff;
+}
+
+/* Section title */
+html.light .assessment-section-title {
+  color: #0f172a;
+}
+
+/* Domain cards — clean white with accent left-border glow */
+html.light .assessment-domain-card {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(203,213,225,0.8);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+html.light .assessment-domain-card:hover {
+  border-color: rgba(59,130,246,0.35);
+  box-shadow: 0 8px 32px rgba(59,130,246,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.98);
+}
+
+/* Domain icon box */
+html.light .assessment-domain-icon-box {
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(203,213,225,0.6);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+/* 15 Questions badge */
+html.light .assessment-badge-sm {
+  background: rgba(255,255,255,0.92);
+  color: #374151;
+  border: 1px solid rgba(203,213,225,0.7);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Domain card content area */
+html.light .assessment-domain-content {
+  background: rgba(255,255,255,0.95);
+  border-top: 1px solid rgba(226,232,240,0.8);
+}
+
+/* Domain title — uses accent color on hover via group */
+html.light .assessment-domain-title {
+  color: #0f172a;
+}
+html.light .group:hover .assessment-domain-title {
+  color: #2563eb;
+}
+
+html.light .assessment-domain-desc {
+  color: #64748b;
+}
+
+html.light .assessment-time-text {
+  color: #94a3b8;
+}
+
+html.light .assessment-start-link {
+  color: #2563eb;
+}
+html.light .group:hover .assessment-start-link {
+  color: #1d4ed8;
+}
+
+
+/* ============================================
+   RoadmapDetail Page — Light Mode Color Grading
+   ============================================ */
+
+/* ── Page ── */
+html.light .min-h-screen.bg-black {
+  background: linear-gradient(160deg, #eef6ff 0%, #f0f9ff 35%, #faf5ff 70%, #f0fdf4 100%) !important;
+  color: #111827 !important;
+}
+
+html.light .min-h-screen.bg-black h1 {
+  color: #0f172a !important;
+}
+
+/* ── Back button ── */
+html.light .bg-\[#0A0E14\].border.border-gray-800.rounded-lg {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+html.light .bg-\[#0A0E14\].border.border-gray-800.rounded-lg:hover {
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ── Progress Board ── */
+html.light .bg-\[#0A0E14\].border.border-gray-800.rounded-2xl {
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%) !important;
+  border-color: #dbeafe !important;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.1), 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+/* Progress bar track */
+html.light .bg-gray-800.rounded-full {
+  background: #e2e8f0 !important;
+}
+
+/* Course Duration divider */
+html.light .border-l.border-gray-800 {
+  border-color: #dbeafe !important;
+}
+
+html.light .bg-green-900\/20.border-green-900\/50 {
+  background: rgba(16,185,129,0.12) !important;
+  border-color: rgba(16,185,129,0.35) !important;
+}
+
+/* ── Tabs ── */
+html.light .border-b.border-gray-800 {
+  border-color: #e2e8f0 !important;
+}
+html.light .border-b.border-gray-800 button {
+  color: #94a3b8 !important;
+}
+html.light .border-b.border-gray-800 button:hover {
+  color: #475569 !important;
+}
+html.light .border-b.border-gray-800 button.text-white {
+  color: #0f172a !important;
+}
+
+/* ── Overview Module Cards ── */
+
+/* Active / In-Progress — keep dark bg, add warm amber accent */
+html.light .bg-\[#0f1115\].border-yellow-600\/50 {
+  background: linear-gradient(145deg, #1a1608 0%, #1c1a0e 100%) !important;
+  border-color: rgba(245,158,11,0.55) !important;
+  box-shadow: 0 4px 24px rgba(245,158,11,0.15), 0 1px 4px rgba(0,0,0,0.2) !important;
+  opacity: 1 !important;
+}
+html.light .bg-\[#0f1115\].border-yellow-600\/50:hover {
+  border-color: rgba(245,158,11,0.75) !important;
+  box-shadow: 0 8px 32px rgba(245,158,11,0.22) !important;
+}
+
+/* ── Locked Module Cards — Dark mode (default) ── */
+.locked-module-card {
+  background: #0f1115;
+  border-color: rgba(55, 65, 81, 0.5);
+  opacity: 0.55;
+}
+.locked-module-badge {
+  background: #1f2937;
+  color: #6b7280;
+}
+.locked-module-title  { color: #6b7280; }
+.locked-module-desc   { color: #4b5563; }
+.locked-module-topics { color: #4b5563; }
+.locked-module-pill {
+  background: rgba(31, 41, 55, 0.5);
+  color: #4b5563;
+  border: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+/* ── Locked Module Cards — Light mode ── */
+html.light .locked-module-card {
+  background: linear-gradient(145deg, #f8faff 0%, #eef2f9 100%) !important;
+  border: 1.5px dashed #c7d2e8 !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 12px rgba(100,116,139,0.08) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle frosted lock overlay */
+html.light .locked-module-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(226,232,240,0.25) 0%,
+    rgba(203,213,225,0.1) 50%,
+    rgba(226,232,240,0.2) 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+html.light .locked-module-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Module number badge */
+html.light .locked-module-badge {
+  background: rgba(148,163,184,0.15) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(148,163,184,0.3) !important;
+}
+
+/* Text */
+html.light .locked-module-title  { color: #64748b !important; }
+html.light .locked-module-desc   { color: #94a3b8 !important; }
+html.light .locked-module-topics { color: #94a3b8 !important; }
+
+/* Status pill */
+html.light .locked-module-pill {
+  background: rgba(148,163,184,0.12) !important;
+  color: #64748b !important;
+  border: 1px solid rgba(148,163,184,0.35) !important;
+  letter-spacing: 0.08em;
+}
+
+/* Lock icon */
+html.light .locked-module-card .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+/* Footer divider */
+html.light .locked-module-card .border-t {
+  border-top-color: rgba(148,163,184,0.25) !important;
+  border-top-style: solid !important;
+}
+
+/* Remove opacity fade — locked cards use styling instead */
+html.light .opacity-60 {
+  opacity: 1 !important;
+}
+
+/* Active card footer divider */
+html.light .border-t.border-gray-800\/50 {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html.light .bg-gray-800.text-gray-500 {
+  background: rgba(255,255,255,0.08) !important;
+  color: #94a3b8 !important;
+}
+
+/* In-progress status pill */
+html.light .bg-\[#3A2D0C\].text-yellow-500 {
+  background: rgba(245,158,11,0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245,158,11,0.4) !important;
+}
+
+/* Locked status pill */
+html.light .bg-gray-800\/50.text-gray-600 {
+  background: rgba(255,255,255,0.07) !important;
+  color: #64748b !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+.module-header {
+  background: linear-gradient(to right, #0A0E14, #0D1117);
+}
+
+html.light .module-header {
+  background: #ffffff;
+}
+
+html.light .bg-gradient-to-r.from-white.via-gray-100.to-gray-300 {
+  background-image: linear-gradient(to right, #111827, #374151) !important;
+}
+
+.codearena-page {
+  background: #000000;
+  color: #f3f4f6;
+}
+
+html.light .codearena-page {
+  background: #f8fafc;
+  color: #111827;
+}
+
+.theme-text {
+  color: #f3f4f6;
+}
+
+html.light .theme-text {
+  color: #111827;
+}
+
+.codearena-topbar {
+  background: #000;
+  border-bottom: 1px solid #1f2937;
+}
+
+html.light .codearena-topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.codearena-sidebar {
+  background: #0f1115;
+}
+
+html.light .codearena-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.codearena-content {
+  background: #0a0e14;
+}
+
+html.light .codearena-content {
+  background: #ffffff;
+}
+
+.codearena-results {
+  background: #000;
+}
+
+html.light .codearena-results {
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+}
+
+html.light .codearena-tabs {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+html.light .codearena-tabs button {
+  color: #6b7280 !important;
+}
+
+html.light .codearena-tabs button.active {
+  color: #111827 !important;
+}
+
+.theme-text {
+  color: #f3f4f6;
+}
+
+html.light .theme-text {
+  color: #111827;
+}
+
+.module-sidebar {
+  background: linear-gradient(to bottom, #0A0E14, #0D1117);
+}
+
+html.light .module-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+/* Text inside dark module cards — keep white */
+html.light .bg-\[#0f1115\].border-gray-800 .text-white,
+html.light .bg-\[#0f1115\]\/50.border-gray-800 .text-white,
+html.light .bg-\[#0f1115\].border-yellow-600\/50 .text-white {
+  color: #f1f5f9 !important;
+}
+html.light .bg-\[#0f1115\].border-gray-800 .text-gray-500,
+html.light .bg-\[#0f1115\]\/50.border-gray-800 .text-gray-500 {
+  color: #94a3b8 !important;
+}
+html.light .bg-\[#0f1115\].border-gray-800 h3,
+html.light .bg-\[#0f1115\]\/50.border-gray-800 h3 {
+  color: #e2e8f0 !important;
+}
+html.light .bg-\[#0f1115\].border-gray-800 p,
+html.light .bg-\[#0f1115\]\/50.border-gray-800 p {
+  color: #94a3b8 !important;
+}
+
+/* ── Progress Tab Rows — keep dark so text stays white ── */
+html.light .bg-\[#0f1115\].border.rounded-xl {
+  background: linear-gradient(145deg, #1a1f2e 0%, #161b28 100%) !important;
+  border-color: rgba(99,120,160,0.3) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12) !important;
+  transition: all 0.2s ease;
+}
+html.light .bg-\[#0f1115\].border.rounded-xl:hover {
+  border-color: rgba(99,120,200,0.5) !important;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.1) !important;
+}
+
+html.light .hover\:bg-\[#13161c\]:hover {
+  background: rgba(255,255,255,0.04) !important;
+}
+
+html.light .border-t.border-gray-800 {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Module detail stat mini-cards */
+html.light .bg-gray-900\/50.rounded-lg {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* ── Expanded Section Panels ── */
+
+/* Learning Content — cyan tint */
+html.light .bg-cyan-900\/10.border-cyan-900\/30 {
+  background: linear-gradient(135deg, rgba(6,182,212,0.06) 0%, rgba(14,165,233,0.04) 100%) !important;
+  border-color: rgba(6,182,212,0.25) !important;
+}
+
+/* Knowledge Check — purple tint */
+html.light .bg-purple-900\/10.border-purple-900\/30 {
+  background: linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(139,92,246,0.04) 100%) !important;
+  border-color: rgba(124,58,237,0.25) !important;
+}
+
+/* Coding Challenges — blue tint */
+html.light .bg-blue-900\/10.border-blue-900\/30 {
+  background: linear-gradient(135deg, rgba(59,130,246,0.06) 0%, rgba(99,102,241,0.04) 100%) !important;
+  border-color: rgba(59,130,246,0.25) !important;
+}
+
+/* Interview Prep — green tint */
+html.light .bg-green-900\/10.border-green-900\/30 {
+  background: linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(5,150,105,0.04) 100%) !important;
+  border-color: rgba(16,185,129,0.25) !important;
+}
+
+/* Quiz stats card */
+html.light .bg-gray-900\/50.rounded-lg.mb-4 {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* ── Customize Tab ── */
+html.light .bg-\[#0A0E14\].border.border-gray-800.rounded-2xl.sticky {
+  background: rgba(255,255,255,0.95) !important;
+  border-color: #dbeafe !important;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.08), 0 1px 3px rgba(0,0,0,0.04) !important;
+  backdrop-filter: blur(12px);
+}
+
+html.light .bg-blue-900\/20.border-blue-900\/50 {
+  background: rgba(59,130,246,0.1) !important;
+  border-color: rgba(59,130,246,0.3) !important;
+}
+
+/* Customize module rows — dark so text stays readable */
+html.light .bg-\[#0f1115\].border-gray-800.rounded-xl {
+  background: linear-gradient(145deg, #1a1f2e 0%, #161b28 100%) !important;
+  border-color: rgba(99,120,160,0.3) !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.12) !important;
+}
+
+/* Module index badge */
+html.light .bg-gray-800.text-gray-400.border-gray-700 {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+  color: #64748b !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Add module form */
+html.light .bg-gradient-to-r.from-purple-900\/30.to-blue-900\/30 {
+  background: linear-gradient(135deg, rgba(124,58,237,0.07), rgba(59,130,246,0.07)) !important;
+  border-color: rgba(124,58,237,0.35) !important;
+}
+
+/* Form inputs */
+html.light .bg-gray-800.border-gray-700.rounded-lg.text-white {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #111827 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04) inset;
+}
+html.light .bg-gray-800.border-gray-700.rounded-lg.text-white::placeholder {
+  color: #94a3b8 !important;
+}
+html.light .bg-gray-800.border-gray-700.rounded-lg.text-white:focus {
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.12) !important;
+  background: #fafaff !important;
+}
+
+/* Coming soon / disabled badges */
+html.light .bg-gray-800.text-gray-500.border-gray-700 {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light button.bg-gray-800.text-gray-500.cursor-not-allowed {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+}
+
+/* ============================================
+   ModuleDetail Page — Light Mode Color Grading
+   ============================================ */
+
+/* ── Page background ── */
+html.light .min-h-screen.bg-black.text-white {
+  background: linear-gradient(160deg, #f0f7ff 0%, #f5f9ff 40%, #faf5ff 100%) !important;
+  color: #0f172a !important;
+}
+
+/* ── Sticky Header bar ── */
+html.light .border-b.border-gray-800\/50.bg-gradient-to-r.from-\[#0A0E14\].to-\[#0D1117\] {
+  background: rgba(255,255,255,0.95) !important;
+  border-bottom-color: #e2e8f0 !important;
+  box-shadow: 0 1px 12px rgba(0,0,0,0.06) !important;
+  backdrop-filter: blur(16px);
+}
+
+/* Back button */
+html.light .hover\:bg-gray-800\/50:hover {
+  background: rgba(0,0,0,0.05) !important;
+}
+html.light .hover\:bg-gray-800\/50 svg {
+  color: #64748b !important;
+}
+
+/* Module title in header */
+html.light .bg-gradient-to-r.from-white.via-gray-100.to-gray-300.bg-clip-text {
+  background-image: linear-gradient(to right, #0f172a, #334155) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* Roadmap subtitle in header */
+html.light .text-gray-400.text-xs {
+  color: #64748b !important;
+}
+
+/* Progress bar track in header */
+html.light .bg-gray-800\/50.rounded-full.overflow-hidden.border.border-gray-700\/50 {
+  background: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* ── Left Sidebar ── */
+html.light .bg-gradient-to-b.from-\[#0A0E14\].to-\[#0D1117\].h-\[calc\(100vh-140px\)\] {
+  background: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.04);
+}
+
+/* Sidebar top border */
+html.light .mb-6.pb-4.border-b.border-gray-800\/50 {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* "LEARNING TOPICS" label */
+html.light .text-sm.font-bold.text-gray-300.uppercase {
+  color: #475569 !important;
+}
+
+/* Sidebar progress bar track */
+html.light .flex-1.h-1\.5.bg-gray-800.rounded-full {
+  background: #e2e8f0 !important;
+}
+
+/* Topic count */
+html.light .text-gray-400.font-medium {
+  color: #64748b !important;
+}
+
+/* ── Sidebar Topic Buttons ── */
+
+/* Selected topic */
+html.light .bg-gradient-to-r.from-cyan-900\/40.to-blue-900\/40 {
+  background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(59,130,246,0.1)) !important;
+  border-color: rgba(6,182,212,0.4) !important;
+  box-shadow: 0 2px 12px rgba(6,182,212,0.1) !important;
+}
+
+/* Unselected topic */
+html.light .bg-gray-900\/30.border-gray-800\/50 {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+html.light .bg-gray-900\/30.border-gray-800\/50:hover {
+  background: #f1f5f9 !important;
+  border-color: #bfdbfe !important;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.08) !important;
+}
+
+/* Topic number icon — unselected */
+html.light .bg-gray-800\/50.text-gray-400 {
+  background: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+/* Topic title — selected */
+html.light .text-cyan-300 {
+  color: #0891b2 !important;
+}
+
+/* Topic title — unselected */
+html.light .text-gray-200 {
+  color: #374151 !important;
+}
+
+/* ── Right Content Area ── */
+
+/* Mobile select */
+html.light select.bg-gray-900.border-gray-800 {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Topic badge "Topic X of Y" */
+html.light .bg-gradient-to-r.from-cyan-500.to-blue-600.rounded-full {
+  box-shadow: 0 2px 10px rgba(6,182,212,0.25) !important;
+}
+
+/* Status badge — default/not started */
+html.light .bg-gray-800\/50.text-gray-400.border-gray-700\/50 {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Topic heading h2 */
+html.light h2.text-2xl.font-bold,
+html.light h2.text-3xl.font-bold {
+  color: #0f172a !important;
+}
+
+/* ── Final Assessment Card ── */
+html.light .mt-12.pt-8.border-t.border-gray-800\/50 {
+  border-top-color: #e2e8f0 !important;
+}
+
+html.light .bg-gradient-to-br.from-\[#0D1117\].to-\[#161B22\] {
+  background: linear-gradient(135deg, #f0f7ff 0%, #eff6ff 100%) !important;
+  border-color: rgba(59,130,246,0.25) !important;
+  box-shadow: 0 4px 24px rgba(59,130,246,0.1) !important;
+}
+
+html.light .bg-gradient-to-br.from-\[#0D1117\].to-\[#161B22\] h3 {
+  color: #0f172a !important;
+}
+
+html.light .bg-gradient-to-br.from-\[#0D1117\].to-\[#161B22\] p {
+  color: #475569 !important;
+}
+
+html.light .bg-gradient-to-br.from-\[#0D1117\].to-\[#161B22\] .text-gray-500 {
+  color: #64748b !important;
+}
+
+/* ── SubComponentViewer — non-detail (collapsed list in RoadmapDetail) ── */
+html.light .bg-gray-900\/30.border.border-gray-800.rounded-lg {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+
+html.light .hover\:bg-gray-900\/50 {
+  transition: background 0.15s;
+}
+html.light .hover\:bg-gray-900\/50:hover {
+  background: #f8fafc !important;
+}
+
+html.light .border-t.border-gray-800 {
+  border-top-color: #e2e8f0 !important;
+}
+
+html.light .bg-gray-700 {
+  background: #e2e8f0 !important;
+}
+
+html.light h4.text-white {
+  color: #0f172a !important;
+}
+html.light h4.text-green-400 {
+  color: #059669 !important;
+}
+
+html.light p.text-gray-400.text-sm {
+  color: #64748b !important;
+}
+
+html.light p.text-xs.text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+/* ============================================
+   GeminiCodeArena — Light Mode Color Grading
+   Professional IDE-style light theme
+   ============================================ */
+
+/* ── Top header bar ── */
+html.light .h-12.bg-\[#252526\].border-b.border-\[#3E3E42\] {
+  background: linear-gradient(to right, #1e293b, #0f172a) !important;
+  border-bottom-color: #334155 !important;
+}
+
+/* ── Questions sidebar panel ── */
+html.light .bg-\[#1E1E1E\].border-r.border-\[#3E3E42\] {
+  background: #f8fafc !important;
+  border-right-color: #e2e8f0 !important;
+}
+
+/* Questions panel header */
+html.light .h-10.bg-\[#252526\].border-b.border-\[#3E3E42\].flex.items-center.justify-between.px-3 {
+  background: #f1f5f9 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+html.light .text-xs.font-semibold.text-slate-300.uppercase {
+  color: #475569 !important;
+}
+
+/* Question list items */
+html.light .border-b.border-\[#3E3E42\].transition-colors {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+html.light .bg-\[#2D2D30\].border-l-2.border-l-\[#3B82F6\] {
+  background: #eff6ff !important;
+  border-left-color: #3b82f6 !important;
+}
+
+html.light .hover\:bg-\[#252526\]:hover {
+  background: #f1f5f9 !important;
+}
+
+/* Resize handle */
+html.light .w-1.bg-\[#3E3E42\].hover\:bg-\[#3B82F6\] {
+  background: #e2e8f0 !important;
+}
+html.light .w-1.bg-\[#3E3E42\].hover\:bg-\[#3B82F6\]:hover {
+  background: #3b82f6 !important;
+}
+
+html.light .w-1.bg-\[#3E3E42\].hover\:bg-\[#2563EB\] {
+  background: #e2e8f0 !important;
+}
+html.light .w-1.bg-\[#3E3E42\].hover\:bg-\[#2563EB\]:hover {
+  background: #2563eb !important;
+}
+
+/* Collapsed panel button */
+html.light .w-8.bg-\[#252526\].border-r.border-\[#3E3E42\] {
+  background: #f1f5f9 !important;
+  border-right-color: #e2e8f0 !important;
+}
+html.light .w-8.bg-\[#252526\].border-r.border-\[#3E3E42\]:hover {
+  background: #e2e8f0 !important;
+}
+
+/* ── Middle panel (problem description) ── */
+html.light .bg-\[#1E1E1E\].flex.flex-col.overflow-hidden:not(.editor-panel-container) {
+  background: #ffffff !important;
+}
+
+/* Middle panel tab bar */
+html.light .h-10.bg-\[#252526\].border-b.border-\[#3E3E42\].flex.items-center.px-3.gap-4 {
+  background: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* Problem description text */
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+html.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Example blocks */
+html.light .bg-\[#252526\].rounded-lg.p-4.border.border-\[#3E3E42\] {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* Input/Output pre blocks */
+html.light pre.bg-\[#1E1E1E\].p-3.rounded {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0;
+}
+
+/* Submission cards */
+html.light .bg-\[#252526\].rounded-lg.border.border-\[#3E3E42\].overflow-hidden {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+
+html.light .p-4.border-b.border-\[#3E3E42\] {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+html.light .w-full.bg-\[#1E1E1E\].hover\:bg-\[#2D2D30\].text-slate-300 {
+  background: #f8fafc !important;
+  color: #475569 !important;
+}
+html.light .w-full.bg-\[#1E1E1E\].hover\:bg-\[#2D2D30\].text-slate-300:hover {
+  background: #f1f5f9 !important;
+}
+
+/* Submitted code display */
+html.light .bg-\[#1E1E1E\].rounded-lg.border.border-\[#3E3E42\].overflow-hidden {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light .bg-\[#252526\].px-4.py-2.border-b.border-\[#3E3E42\] {
+  background: #f1f5f9 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+html.light pre.p-4.text-xs.text-slate-300.overflow-x-auto.font-mono.bg-\[#1E1E1E\] {
+  background: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* Summary card */
+html.light .bg-\[#252526\].rounded-lg.p-6.border.border-\[#3E3E42\] {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── Editor panel (right side) ── */
+html.light .bg-\[#1E1E1E\].border-l.border-\[#3E3E42\].flex.flex-col.overflow-hidden.editor-panel-container {
+  background: #fafafa !important;
+  border-left-color: #e2e8f0 !important;
+}
+
+/* Editor header bar */
+html.light .h-10.bg-\[#252526\].border-b.border-\[#3E3E42\].flex.items-center.justify-between.px-3.z-\[200\] {
+  background: #f1f5f9 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* Language selector button */
+html.light .bg-\[#3E3E42\].hover\:bg-\[#4E4E52\].text-slate-300 {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+html.light .bg-\[#3E3E42\].hover\:bg-\[#4E4E52\].text-slate-300:hover {
+  background: #cbd5e1 !important;
+}
+
+/* Language dropdown */
+html.light .bg-\[#252526\].border.border-\[#3E3E42\].rounded-lg.shadow-xl {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
+
+/* ── Test Cases panel ── */
+html.light .border-t.border-\[#3E3E42\] {
+  border-top-color: #e2e8f0 !important;
+}
+
+html.light .border-b.border-\[#3E3E42\] {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* Test cases tab bar */
+html.light .bg-\[#252526\].border-b.border-\[#3E3E42\] {
+  background: #f1f5f9 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* Test case content area */
+html.light .bg-\[#1E1E1E\].p-4,
+html.light .bg-\[#1E1E1E\].p-3 {
+  background: #ffffff !important;
+}
+
+/* INPUT / OUTPUT labels */
+html.light .text-xs.font-semibold.text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Input/Output value boxes */
+html.light .bg-\[#252526\].rounded.p-2,
+html.light .bg-\[#252526\].rounded-md.p-2,
+html.light .bg-\[#252526\].rounded-lg.p-2 {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0;
+  color: #1e293b !important;
+}
+
+/* Test case selector buttons (Case 1, Case 2) */
+html.light .bg-\[#3E3E42\].text-slate-300.rounded {
+  background: #e2e8f0 !important;
+  color: #475569 !important;
+}
+html.light .bg-\[#3E3E42\].text-slate-300.rounded:hover {
+  background: #cbd5e1 !important;
+}
+
+/* Active test case button */
+html.light .bg-\[#2D2D30\].text-white.rounded,
+html.light .bg-blue-600.text-white.rounded {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Passed result */
+html.light .text-green-400 {
+  color: #16a34a !important;
+}
+
+/* Failed result */
+html.light .text-red-400 {
+  color: #dc2626 !important;
+}
+
+/* ── Inline code snippets in problem description ── */
+html.light code.bg-slate-800 {
+  background: #f1f5f9 !important;
+  color: #0891b2 !important;
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Constraints section ── */
+html.light .text-cyan-400 {
+  color: #0891b2 !important;
+}
+
+/* ── Setup page (topic selection) ── */
+html.light .bg-\[#0d1117\],
+html.light .bg-\[#0D1117\] {
+  background: linear-gradient(160deg, #f0f7ff 0%, #f5f9ff 50%, #faf5ff 100%) !important;
+}
+
+/* ── Performance analysis page ── */
+html.light .bg-\[#252526\].rounded-xl,
+html.light .bg-\[#252526\].rounded-2xl {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+}
+
+/* ============================================
+   CodeArena — Semantic Theme Classes
+   Dark mode = default, light mode = override
+   ============================================ */
+
+/* ── Page / root ── */
+.ca-page {
+  background: linear-gradient(to right, #000001, #000000);
+}
+html.light .ca-page {
+  background: #f8fafc !important;
+}
+
+/* ── Top bar ── */
+.ca-topbar {
+  background: linear-gradient(to right, #0d1117, #0a0e14);
+  border-color: #1f2937;
+}
+html.light .ca-topbar {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+html.light .ca-topbar .font-semibold { color: #0f172a !important; }
+html.light .ca-topbar .text-slate-400 { color: #64748b !important; }
+html.light .ca-topbar .text-slate-500 { color: #94a3b8 !important; }
+
+/* ── Shared border ── */
+.ca-border { border-color: #3E3E42; }
+html.light .ca-border { border-color: #e2e8f0 !important; }
+
+/* ── Sidebar (questions list) ── */
+.ca-sidebar { background: #1e1e1e; }
+html.light .ca-sidebar {
+  background: #ffffff !important;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+}
+
+/* ── Panel header bars ── */
+.ca-panel-header { background: #252526; }
+html.light .ca-panel-header {
+  background: #f1f5f9 !important;
+}
+html.light .ca-panel-header .text-slate-300,
+html.light .ca-panel-header .text-slate-400 { color: #475569 !important; }
+
+/* ── Center content panel ── */
+.ca-content { background: #1a1a2e; }
+html.light .ca-content { background: #ffffff !important; }
+
+/* ── Editor panel ── */
+.ca-editor-panel { background: #1e1e1e; }
+html.light .ca-editor-panel { background: #fafafa !important; }
+
+/* ── Question list items ── */
+.ca-q-active { background: #2D2D30; }
+html.light .ca-q-active {
+  background: #eff6ff !important;
+}
+
+.ca-q-hover:hover { background: #252526; }
+html.light .ca-q-hover:hover { background: #f1f5f9 !important; }
+
+/* ── Tabs ── */
+.ca-tab-active { color: #ffffff; }
+html.light .ca-tab-active { color: #0f172a !important; }
+
+.ca-tab-inactive { color: #94a3b8; }
+html.light .ca-tab-inactive { color: #94a3b8 !important; }
+html.light .ca-tab-inactive:hover { color: #475569 !important; }
+
+/* ── Text tokens ── */
+.ca-heading { color: #ffffff; }
+html.light .ca-heading { color: #0f172a !important; }
+
+.ca-body-text { color: #cbd5e1; }
+html.light .ca-body-text { color: #334155 !important; }
+
+.ca-label { color: #94a3b8; }
+html.light .ca-label { color: #475569 !important; }
+
+.ca-muted { color: #64748b; }
+html.light .ca-muted { color: #94a3b8 !important; }
+
+/* ── Example / code blocks ── */
+.ca-example-block { background: #252526; }
+html.light .ca-example-block {
+  background: #f8fafc !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.ca-code-block { background: #1e1e1e; color: #cbd5e1; }
+html.light .ca-code-block {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Cards (submissions, summary) ── */
+.ca-card { background: #252526; }
+html.light .ca-card {
+  background: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* ── Secondary button (View Code) ── */
+.ca-btn-secondary {
+  background: #1e1e1e;
+  color: #94a3b8;
+}
+.ca-btn-secondary:hover { background: #2D2D30; }
+html.light .ca-btn-secondary {
+  background: #f8fafc !important;
+  color: #475569 !important;
+}
+html.light .ca-btn-secondary:hover { background: #f1f5f9 !important; }
+
+/* ── Language selector button ── */
+.ca-lang-btn {
+  background: #3E3E42;
+  color: #cbd5e1;
+}
+.ca-lang-btn:hover { background: #4E4E52; }
+html.light .ca-lang-btn {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+html.light .ca-lang-btn:hover { background: #cbd5e1 !important; }
+
+/* ── Language dropdown ── */
+.ca-dropdown {
+  background: #252526;
+  border: 1px solid #3E3E42;
+}
+html.light .ca-dropdown {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
+html.light .ca-dropdown button { color: #334155 !important; }
+html.light .ca-dropdown button:hover { background: #f1f5f9 !important; }
+
+/* ── Resize handles ── */
+html.light .h-1.bg-\[#3E3E42\] { background: #e2e8f0 !important; }
+html.light .h-1.bg-\[#3E3E42\]:hover { background: #3b82f6 !important; }
+
+/* ── CodeArena IO Boxes (Test Cases / Results panels) ── */
+
+/* Dark default — keep the dark box, make text crisp white */
+.ca-io-box {
+  background: #1e1e1e;
+  border: 1px solid #3E3E42;
+  color: #ffffff;
+}
+
+.ca-io-text {
+  color: #ffffff;
+}
+
+/* Light mode — keep dark box, ensure white text stays readable */
+html.light .ca-io-box {
+  background: #1e2433 !important;
+  border-color: #2d3748 !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+html.light .ca-io-text {
+  color: #f1f5f9 !important;
+}
+
+/* Custom input textarea */
+.ca-io-textarea {
+  background: #1e1e1e;
+  border: 1px solid #3E3E42;
+  color: #ffffff;
+}
+.ca-io-textarea::placeholder { color: #64748b; }
+.ca-io-textarea:focus { border-color: #3B82F6; }
+
+html.light .ca-io-textarea {
+  background: #1e2433 !important;
+  border-color: #2d3748 !important;
+  color: #f1f5f9 !important;
+}
+html.light .ca-io-textarea::placeholder { color: #64748b !important; }
+
+/* Case 1 / Case 2 selector buttons */
+.ca-case-btn {
+  background: #2d2d30;
+  color: #e2e8f0;
+}
+.ca-case-btn:hover { background: #3a3a3d; }
+
+html.light .ca-case-btn {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+html.light .ca-case-btn:hover {
+  background: #e2e8f0 !important;
+}
+
+/* ============================================
+   DifficultySelection Page — Light Mode
+   ============================================ */
+
+.ds-page {
+  background: linear-gradient(160deg, #f0f7ff 0%, #eef4fd 50%, #f5f0ff 100%);
+  color: #111827;
+}
+
+/* Settings input boxes */
+.ds-setting-box {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.08);
+}
+.ds-setting-box:hover {
+  border-color: rgba(59,130,246,0.4);
+  box-shadow: 0 4px 16px rgba(59,130,246,0.12);
+}
+
+/* Difficulty cards — unselected */
+.ds-diff-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.ds-diff-card:hover {
+  background: #f8fafc;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+/* Difficulty cards — selected */
+.ds-diff-card-selected {
+  background: #ffffff;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+}
+
+/* Icon background inside card */
+.ds-diff-icon-bg {
+  background: rgba(0,0,0,0.04);
+}
+
+/* ============================================
+   SystemCheck Modal — Light Mode
+   ============================================ */
+
+.sc-modal {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #111827;
+}
+
+/* Check row — passed */
+.sc-check-pass {
+  background: linear-gradient(135deg, rgba(16,185,129,0.06), rgba(5,150,105,0.04));
+  border-color: rgba(16,185,129,0.25);
+}
+
+/* Check row — failed */
+.sc-check-fail {
+  background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(220,38,38,0.04));
+  border-color: rgba(239,68,68,0.25);
+}
+
+/* Icon wrapper — passed */
+.sc-icon-pass {
+  background: rgba(16,185,129,0.12);
+  color: #059669;
+}
+
+/* Icon wrapper — failed */
+.sc-icon-fail {
+  background: rgba(239,68,68,0.1);
+  color: #dc2626;
+}
+
+/* ============================================
+   Quiz Page — Light Mode
+   ============================================ */
+
+.quiz-page {
+  background: linear-gradient(160deg, #f0f7ff 0%, #eef4fd 50%, #f5f0ff 100%);
+  color: #111827;
+}
+
+.quiz-header {
+  background: rgba(255,255,255,0.95);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  backdrop-filter: blur(12px);
+}
+
+.quiz-sidebar {
+  background: #ffffff;
+  border-right-color: #e2e8f0;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.05);
+}
+
+/* Answer option cards */
+.quiz-option {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: all 0.15s ease;
+}
+
+/* ============================================
+   Results Page — Light Mode
+   ============================================ */
+
+.results-page {
+  background: linear-gradient(160deg, #f0f7ff 0%, #eef4fd 50%, #f5f0ff 100%);
+  color: #111827;
+}
+
+/* ============================================
+   CodeArena Setup View — Light Mode
+   ============================================ */
+
+.setup-page {
+  background: linear-gradient(160deg, #f0f7ff 0%, #eef4fd 50%, #f5f0ff 100%);
+}
+
+/* Main card */
+.setup-card {
+  background: rgba(255,255,255,0.95);
+  border: 1px solid rgba(148,163,184,0.2);
+  box-shadow:
+    0 20px 60px rgba(59,130,246,0.08),
+    0 4px 16px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+  backdrop-filter: blur(20px);
+}
+
+/* Topic buttons — unselected */
+.setup-topic-btn {
+  background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+  border-color: #e2e8f0;
+  color: #64748b;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.setup-topic-btn:hover {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe);
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.12);
+  transform: translateY(-1px);
+}
+
+/* Toggle groups (Difficulty / Time / Mode) */
+.setup-toggle-group {
+  background: linear-gradient(145deg, #f1f5f9, #e8eef5);
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+/* Inactive toggle option */
+.setup-toggle-group button:not(.setup-toggle-active) {
+  color: #94a3b8;
+  font-weight: 500;
+}
+.setup-toggle-group button:not(.setup-toggle-active):hover {
+  color: #475569;
+  background: rgba(255,255,255,0.5);
+  border-radius: 8px;
+}
+
+/* Active toggle button — gradient pill */
+.setup-toggle-active {
+  background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 4px 12px rgba(37,99,235,0.35),
+    0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  font-weight: 700;
+  transform: translateY(-0.5px);
+}
+
+/* ── Difficulty toggle — Emerald ── */
+.setup-toggle-emerald {
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7);
+  border-color: #bbf7d0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+}
+.setup-toggle-active-emerald {
+  background: linear-gradient(135deg, #059669 0%, #10b981 60%, #34d399 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(5,150,105,0.4), 0 1px 3px rgba(0,0,0,0.1) !important;
+  transform: translateY(-0.5px);
+}
+.setup-toggle-emerald button:not(.setup-toggle-active-emerald) {
+  color: #6b7280;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.setup-toggle-emerald button:not(.setup-toggle-active-emerald):hover {
+  color: #059669;
+  background: rgba(255,255,255,0.7);
+}
+
+/* ── Time Limit toggle — Sky ── */
+.setup-toggle-sky {
+  background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+  border-color: #bae6fd;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+}
+.setup-toggle-active-sky {
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 60%, #38bdf8 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(2,132,199,0.4), 0 1px 3px rgba(0,0,0,0.1) !important;
+  transform: translateY(-0.5px);
+}
+.setup-toggle-sky button:not(.setup-toggle-active-sky) {
+  color: #6b7280;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.setup-toggle-sky button:not(.setup-toggle-active-sky):hover {
+  color: #0284c7;
+  background: rgba(255,255,255,0.7);
+}
+
+/* ── Question Mode toggle — Violet ── */
+.setup-toggle-violet {
+  background: linear-gradient(145deg, #faf5ff, #ede9fe);
+  border-color: #ddd6fe;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+}
+.setup-toggle-active-violet {
+  background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 60%, #a78bfa 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(124,58,237,0.4), 0 1px 3px rgba(0,0,0,0.1) !important;
+  transform: translateY(-0.5px);
+}
+.setup-toggle-violet button:not(.setup-toggle-active-violet) {
+  color: #6b7280;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.setup-toggle-violet button:not(.setup-toggle-active-violet):hover {
+  color: #7c3aed;
+  background: rgba(255,255,255,0.7);
+}
+
+/* ── Count slider ── */
+.setup-slider-track {
+  background: linear-gradient(to right, #ede9fe, #e0f2fe);
+  border: 1px solid #ddd6fe;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+.setup-slider-fill {
+  background: linear-gradient(to right, #7c3aed, #0ea5e9);
+  box-shadow: 0 0 8px rgba(124,58,237,0.3);
+}
+.setup-slider-thumb {
+  background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+  box-shadow: 0 2px 8px rgba(124,58,237,0.4), 0 0 0 3px rgba(255,255,255,0.9);
+}
+
+/* ── Begin Challenge button ── */
+.setup-begin-btn {
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 55%, #0891b2 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(79,70,229,0.35), 0 2px 6px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+.setup-begin-btn:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 55%, #0284c7 100%);
+  box-shadow: 0 8px 28px rgba(79,70,229,0.45), 0 3px 8px rgba(0,0,0,0.12);
+  transform: translateY(-1px);
+}
+.setup-begin-btn:active { transform: translateY(0); }
+
+/* ── CodeArena Shell — prevent page-level scroll ── */
+body:has(.codearena-shell) {
+  overflow: hidden;
+}
+/* FULLSCREEN CODING MODE FIX */
+body.fullscreen-coding-mode .codearena-shell {
+  margin-top: 0 !important;
+  height: 100vh !important;
+}
+
+body.fullscreen-coding-mode .sidebar-container {
+  display: none !important;
+}
+
+body.fullscreen-coding-mode .codearena-shell > div {
+  width: 100% !important;
+}
+
+/* Remove any spacing */
+body.fullscreen-coding-mode {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* ============================================
+   Dashboard & Profile — Light Mode
+   ============================================ */
+
+/* ── Page root ── */
+html.light .min-h-screen.text-white.pb-20.pt-24,
+html.light .min-h-screen.text-white.pt-24.pb-12 {
+  background: #F8FAFC !important;
+  color: #111827 !important;
+}
+
+/* ── Background blur orbs — hide in light ── */
+html.light .fixed.inset-0.z-0.overflow-hidden.pointer-events-none {
+  display: none !important;
+}
+
+/* ── Welcome heading gradient ── */
+html.light .bg-gradient-to-r.from-white.to-gray-400.bg-clip-text {
+  background-image: linear-gradient(to right, #0F172A, #374151) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* ── "New Roadmap" button ── */
+html.light a.bg-white.text-black.rounded-full {
+  background: #0F172A !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(15,23,42,0.2) !important;
+}
+html.light a.bg-white.text-black.rounded-full:hover {
+  background: #1e293b !important;
+}
+
+/* ── Stat cards ── */
+html.light .bg-gray-900\/50.backdrop-blur-sm.border.border-white\/10.p-6.rounded-2xl {
+  background: #ffffff !important;
+  border-color: #E5E7EB !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+}
+html.light .bg-gray-900\/50.backdrop-blur-sm.border.border-white\/10.p-6.rounded-2xl h3 {
+  color: #0F172A !important;
+}
+html.light .bg-gray-900\/50.backdrop-blur-sm.border.border-white\/10.p-6.rounded-2xl p {
+  color: #6B7280 !important;
+}
+
+/* ── Section headings ── */
+html.light h2.text-xl.font-bold,
+html.light h2.text-2xl.font-bold,
+html.light h2.text-3xl.font-bold {
+  color: #0F172A !important;
+}
+
+/* ── Roadmap cards ── */
+html.light .bg-gray-900\/50.border.border-white\/10.rounded-2xl,
+html.light .bg-gray-900\/40.border.border-white\/5.rounded-2xl,
+html.light .bg-gray-900\/40.border.border-white\/10.rounded-2xl {
+  background: #ffffff !important;
+  border-color: #E5E7EB !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+
+/* ── Quick Action cards ── */
+html.light .bg-gray-900\/80.border.border-white\/5.rounded-2xl,
+html.light .bg-gradient-to-br.from-gray-900.to-black.border.border-white\/5.rounded-2xl {
+  background: #ffffff !important;
+  border-color: #E5E7EB !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+
+/* Daily Insight card */
+html.light .bg-gradient-to-br.from-gray-900.to-black.border.border-white\/5 h3 {
+  color: #0F172A !important;
+}
+html.light .bg-gradient-to-br.from-gray-900.to-black.border.border-white\/5 p {
+  color: #6B7280 !important;
+}
+
+/* ── View All link ── */
+html.light a.text-gray-400.hover\:text-white {
+  color: #6B7280 !important;
+}
+html.light a.text-gray-400.hover\:text-white:hover {
+  color: #0F172A !important;
+}
+
+/* ── Progress bar track ── */
+html.light .h-2.bg-gray-800.rounded-full {
+  background: #E5E7EB !important;
+}
+
+/* ── "Continue Learning" button ── */
+html.light .text-blue-400.hover\:text-white {
+  color: #2563EB !important;
+}
+
+/* ── Resume Optimizer & Portfolios section headings ── */
+html.light h2.text-2xl.font-bold.text-white,
+html.light h2.text-3xl.font-bold.text-white {
+  color: #0F172A !important;
+}
+html.light p.text-gray-400 { color: #6B7280 !important; }
+html.light p.text-gray-500 { color: #9CA3AF !important; }
+
+/* ── Profile page ── */
+
+/* Profile header card */
+html.light .bg-gray-900\/60.backdrop-blur-xl.border.border-white\/10.rounded-3xl {
+  background: #ffffff !important;
+  border-color: #E5E7EB !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07) !important;
+}
+
+/* Profile banner */
+html.light .h-48.bg-gradient-to-r.from-blue-900.via-cyan-900.to-black {
+  background: linear-gradient(to right, #0F172A, #1e3a5f, #0e7490) !important;
+}
+
+/* Profile name */
+html.light h1.text-3xl.font-bold.text-white {
+  color: #0F172A !important;
+}
+
+/* Profile email/location */
+html.light p.text-gray-400.flex.items-center {
+  color: #6B7280 !important;
+}
+
+/* Edit Profile button */
+html.light button.bg-white\/10.hover\:bg-white\/20.border.border-white\/5.rounded-full {
+  background: #F3F4F6 !important;
+  border-color: #E5E7EB !important;
+  color: #374151 !important;
+}
+html.light button.bg-white\/10.hover\:bg-white\/20.border.border-white\/5.rounded-full:hover {
+  background: #E5E7EB !important;
+}
+
+/* Header stats */
+html.light .border-t.border-white\/5 {
+  border-top-color: #E5E7EB !important;
+}
+html.light .text-2xl.font-bold.text-white { color: #0F172A !important; }
+html.light .text-xs.text-gray-400.uppercase { color: #9CA3AF !important; }
+
+/* Sidebar nav */
+html.light .bg-gray-900\/40.backdrop-blur-md.border.border-white\/5.rounded-2xl {
+  background: #ffffff !important;
+  border-color: #E5E7EB !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+html.light button.text-gray-400.hover\:text-white.hover\:bg-white\/5 {
+  color: #6B7280 !important;
+}
+html.light button.text-gray-400.hover\:text-white.hover\:bg-white\/5:hover {
+  color: #0F172A !important;
+  background: #F3F4F6 !important;
+}
+
+/* Settings form inputs */
+html.light input.bg-black\/40.border.border-white\/10.rounded-xl,
+html.light textarea.bg-black\/40.border.border-white\/10.rounded-xl,
+html.light select.bg-black\/40.border.border-white\/10.rounded-xl {
+  background: #F9FAFB !important;
+  border-color: #D1D5DB !important;
+  color: #111827 !important;
+}
+html.light input.bg-black\/40:focus,
+html.light textarea.bg-black\/40:focus,
+html.light select.bg-black\/40:focus {
+  border-color: #F97316 !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12) !important;
+}
+html.light label.text-sm.text-gray-400 { color: #6B7280 !important; }
+
+/* Activity timeline */
+html.light .border-l.border-gray-800 { border-left-color: #E5E7EB !important; }
+html.light span.bg-gray-900.border.border-gray-800 {
+  background: #ffffff !important;
+  border-color: #E5E7EB !important;
+}
+html.light h4.text-white.font-medium { color: #0F172A !important; }
+html.light p.text-gray-500.text-sm { color: #9CA3AF !important; }
+html.light span.bg-white\/5.text-gray-300.border.border-white\/5 {
+  background: #F3F4F6 !important;
+  color: #374151 !important;
+  border-color: #E5E7EB !important;
+}
+
+/* Account Settings heading */
+html.light h3.text-lg.font-bold { color: #0F172A !important; }
+html.light button.text-blue-400.hover\:text-white.text-sm.font-medium {
+  color: #F97316 !important;
+}
+html.light button.text-blue-400.hover\:text-white.text-sm.font-medium:hover {
+  color: #EA580C !important;
 }

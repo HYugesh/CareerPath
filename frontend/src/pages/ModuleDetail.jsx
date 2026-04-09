@@ -130,7 +130,7 @@ export default function ModuleDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center pt-20">
+      <div className="min-h-screen flex items-center justify-center pt-20 codearena-page">
         <div className="text-white text-xl">Loading module...</div>
       </div>
     );
@@ -138,7 +138,7 @@ export default function ModuleDetail() {
 
   if (!module) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center pt-20">
+      <div className="min-h-screen flex items-center justify-center pt-20 codearena-page">
         <div className="text-white text-xl">Module not found</div>
       </div>
     );
@@ -149,10 +149,10 @@ export default function ModuleDetail() {
   const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-black text-white pt-20">
+    <div className="min-h-screen pt-16">
       {/* Header */}
-      <div className="border-b border-gray-800/50 bg-gradient-to-r from-[#0A0E14] to-[#0D1117] sticky top-16 z-10 backdrop-blur-sm">
-        <div className="max-w-[1800px] mx-auto px-4 md:px-6 py-4 md:py-5">
+      <div className="border-b border-gray-800/50 module-header sticky top-12 z-8 backdrop-blur-sm">
+        <div className="max-w-[1800px] mx-auto px-4 md:px-6 py-4 md:py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
               <button
@@ -212,7 +212,7 @@ export default function ModuleDetail() {
 
       <div className="flex max-w-[1800px] mx-auto">
         {/* Left Sidebar - Sub-Components Navigation - Hidden on mobile, drawer on tablet */}
-        <div className="hidden lg:block w-80 border-r border-gray-800/50 bg-gradient-to-b from-[#0A0E14] to-[#0D1117] h-[calc(100vh-140px)] sticky top-[140px] overflow-y-auto custom-scrollbar">
+        <div className="hidden lg:block w-80 border-r border-gray-800/50 module-sidebar h-[calc(100vh-140px)] sticky top-[140px] overflow-y-auto custom-scrollbar">
           <div className="p-6">
             <div className="mb-6 pb-4 border-b border-gray-800/50">
               <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-2">
