@@ -255,88 +255,97 @@ export default function SubComponentViewer({
                           __html: (() => {
                             const raw = subComponent.learningContent.explanation;
 
-                            // Pre-process: split inline "* item" markers into separate lines
-                            // Only match single * (not **bold**) followed by a capital letter or backtick
-                            const normalized = raw
-                              .replace(/(?<!\*)\*(?!\*)\s+(?=[A-Z`])/g, '\n\n* ')
-                              .replace(/\s+(\d+)\.\s+(?=[A-Z`])/g, '\n\n$1. ');
+                            // ── Step 1: Aggressive pre-processing ──
+                            // The AI often returns everything as one long string with inline markers.
+                            // We insert newlines before every structural token so the splitter works.
+                            let text = raw
+                              // Headings: ensure # / ## / ### start on their own line
+                              .replace(/\s*(#{1,3})\s+/g, '\n\n$1 ')
+                              // Numbered items: "5. Text" → newline before
+                              // Only when preceded by non-newline content
+                              .replace(/([^\n])\s+(\d{1,2})\.\s+(?=[A-Z"'`\[])/g, '$1\n\n$2. ')
+                              // Bullet items: single * not part of **bold**
+                              // Match "word * Word" pattern
+                              .replace(/([^\n*])\s+\*\s+(?=[A-Z"'`\[])/g, '$1\n\n* ')
+                              // Separator lines like "---"
+                              .replace(/\s*---+\s*/g, '\n\n')
+                              // Collapse 3+ newlines to 2
+                              .replace(/\n{3,}/g, '\n\n')
+                              .trim();
 
-                            return normalized
-                              .split('\n\n')
-                              .map(paragraph => {
-                                const trimmed = paragraph.trim();
-                                if (!trimmed) return '';
+                            // ── Step 2: Inline formatting helper ──
+                            const fmt = (s) => s
+                              .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                              .replace(/`([^`]+)`/g, '<code>$1</code>')
+                              .replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
 
-                                // Bold headers **Header:**
-                                if (trimmed.match(/^\*\*(.+?):\*\*$/)) {
-                                  const heading = trimmed.replace(/^\*\*(.+?):\*\*$/, '$1');
-                                  return `<h2 class="section-heading-bold">${heading}:</h2>`;
-                                }
-                                // Bold headers **Header**
-                                if (trimmed.match(/^\*\*(.+?)\*\*$/)) {
-                                  const heading = trimmed.replace(/^\*\*(.+?)\*\*$/, '$1');
-                                  return `<h2 class="section-heading-bold">${heading}</h2>`;
-                                }
-                                // ## Heading
-                                if (trimmed.startsWith('## ')) {
-                                  return `<h2 class="section-heading">${trimmed.slice(3)}</h2>`;
-                                }
-                                // ### Heading
-                                if (trimmed.startsWith('### ')) {
-                                  return `<h3 class="subsection-heading">${trimmed.slice(4)}</h3>`;
-                                }
+                            // ── Step 3: Parse each block ──
+                            const blocks = text.split('\n\n');
+                            const html = blocks.map(block => {
+                              const t = block.trim();
+                              if (!t) return '';
 
-                                // Multi-line bullet block (lines starting with * or -)
-                                const lines = trimmed.split('\n');
-                                const allBullets = lines.every(l => l.trim().match(/^[*\-•]\s+/));
-                                if (allBullets && lines.length > 1) {
+                              // ### Subheading
+                              if (t.startsWith('### ')) {
+                                return `<h3 class="subsection-heading">${fmt(t.slice(4))}</h3>`;
+                              }
+                              // ## Heading
+                              if (t.startsWith('## ')) {
+                                return `<h2 class="section-heading">${fmt(t.slice(3))}</h2>`;
+                              }
+                              // # Heading
+                              if (t.startsWith('# ')) {
+                                return `<h2 class="section-heading">${fmt(t.slice(2))}</h2>`;
+                              }
+
+                              // Multi-line block — check if all lines are bullets or numbered
+                              const lines = t.split('\n').map(l => l.trim()).filter(Boolean);
+
+                              if (lines.length > 1) {
+                                const allBullet   = lines.every(l => /^[*\-•]\s+/.test(l));
+                                const allNumbered = lines.every(l => /^\d+\.\s+/.test(l));
+
+                                if (allBullet) {
                                   const items = lines.map(l => {
-                                    const content = l.trim().replace(/^[*\-•]\s+/, '')
-                                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                                      .replace(/`(.+?)`/g, '<code>$1</code>');
-                                    return `<li class="bullet-item">${content}</li>`;
+                                    const c = l.replace(/^[*\-•]\s+/, '');
+                                    return `<li class="bullet-item">${fmt(c)}</li>`;
                                   }).join('');
                                   return `<ul class="bullet-list">${items}</ul>`;
                                 }
 
-                                // Single bullet line
-                                if (trimmed.match(/^[*\-•]\s+/)) {
-                                  const content = trimmed.replace(/^[*\-•]\s+/, '')
-                                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                                    .replace(/`(.+?)`/g, '<code>$1</code>');
-                                  return `<div class="bullet-item">${content}</div>`;
-                                }
-
-                                // Numbered list block
-                                const allNumbered = lines.every(l => l.trim().match(/^\d+\.\s+/));
-                                if (allNumbered && lines.length > 1) {
+                                if (allNumbered) {
                                   const items = lines.map(l => {
-                                    const num = l.trim().match(/^(\d+)\./)[1];
-                                    const content = l.trim().replace(/^\d+\.\s+/, '')
-                                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                                      .replace(/`(.+?)`/g, '<code>$1</code>');
-                                    return `<li class="numbered-item"><span class="number">${num}.</span> ${content}</li>`;
+                                    const num = l.match(/^(\d+)\./)[1];
+                                    const c   = l.replace(/^\d+\.\s+/, '');
+                                    return `<li class="numbered-item"><span class="number">${num}.</span> ${fmt(c)}</li>`;
                                   }).join('');
                                   return `<ol class="numbered-list">${items}</ol>`;
                                 }
+                              }
 
-                                // Single numbered item
-                                if (trimmed.match(/^\d+\.\s+/)) {
-                                  const num = trimmed.match(/^(\d+)\./)[1];
-                                  const content = trimmed.replace(/^\d+\.\s+/, '')
-                                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                                    .replace(/`(.+?)`/g, '<code>$1</code>');
-                                  return `<div class="numbered-item"><span class="number">${num}.</span> ${content}</div>`;
-                                }
+                              // Single bullet
+                              if (/^[*\-•]\s+/.test(t)) {
+                                const c = t.replace(/^[*\-•]\s+/, '');
+                                return `<div class="bullet-item">${fmt(c)}</div>`;
+                              }
 
-                                // Regular paragraph
-                                const processed = trimmed
-                                  .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                                  .replace(/`(.+?)`/g, '<code>$1</code>')
-                                  .replace(/\*(.+?)\*/g, '<em>$1</em>');
-                                return `<p class="content-paragraph">${processed}</p>`;
-                              })
-                              .join('');
+                              // Single numbered item
+                              if (/^\d+\.\s+/.test(t)) {
+                                const num = t.match(/^(\d+)\./)[1];
+                                const c   = t.replace(/^\d+\.\s+/, '');
+                                return `<div class="numbered-item"><span class="number">${num}.</span> ${fmt(c)}</div>`;
+                              }
+
+                              // Standalone **Bold Header:**
+                              if (/^\*\*[^*]+\*\*$/.test(t)) {
+                                return `<h3 class="section-heading-bold">${fmt(t)}</h3>`;
+                              }
+
+                              // Regular paragraph
+                              return `<p class="content-paragraph">${fmt(t)}</p>`;
+                            }).join('');
+
+                            return html;
                           })()
                         }}
                       />
