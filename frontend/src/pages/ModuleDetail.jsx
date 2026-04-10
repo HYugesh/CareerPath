@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SubComponentViewer from '../components/SubComponentViewer';
+import RoadmapChatbot from '../components/RoadmapChatbot';
 import api from '../api/axiosConfig';
 
 export default function ModuleDetail() {
@@ -492,6 +493,11 @@ export default function ModuleDetail() {
           )}
         </div>
       </div>
+      <RoadmapChatbot context={{
+        topic: roadmap?.primaryDomain || roadmap?.title,
+        module: module?.title,
+        subtopic: selectedSubComponent?.title,
+      }} />
     </div>
   );
 }

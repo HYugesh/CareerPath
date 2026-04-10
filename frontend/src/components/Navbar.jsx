@@ -85,6 +85,7 @@ export default function Navbar() {
     { to: '/assessment', label: 'Quiz' },
     { to: '/interview-landing', label: 'Interview' },
     { to: '/coding', label: 'CodeArena' },
+    { to: '/jobs', label: 'Jobs' },
   ];
 
   const isActive = (path) => location.pathname === path;

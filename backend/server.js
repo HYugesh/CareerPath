@@ -103,6 +103,15 @@ app.use("/api/roadmaps", require("./routes/roadmapQuizRoutes"));
 app.use("/api/roadmaps", require("./routes/subComponentRoutes"));
 app.use("/api/roadmaps", require("./routes/subTopicQuizRoutes"));
 
+// Chatbot
+app.use("/api/chatbot", require("./routes/chatbotRoutes"));
+
+// Jobs
+app.use("/api/jobs", require("./routes/jobRoutes"));
+
+// Jobs
+app.use("/api/jobs", require("./routes/jobRoutes"));
+
 // AI code execution endpoint
 app.post("/api/ask", async (req, res) => {
   const { prompt } = req.body;

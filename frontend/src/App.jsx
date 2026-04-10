@@ -23,6 +23,7 @@ import VoiceDemo from './components/VoiceDemo';
 import GeminiCodeArena from './pages/GeminiCodeArena';
 import CodeArenaShell from './pages/CodeArenaShell';
 import OnlineCompiler from './pages/OnlineCompiler';
+import Jobs from './pages/Jobs';
 import InterviewRoom from './pages/InterviewRoom';
 import InterviewLanding from './pages/InterviewLanding';
 import ForgotPassword from './pages/ForgotPassword';
@@ -67,6 +68,7 @@ function AnimatedRoutes() {
         <Route path="/interview-old" element={<Assistant />} />
         <Route path="/voice-demo" element={<ProtectedRoute><VoiceDemo /></ProtectedRoute>} />
         <Route path="/coding" element={<ProtectedRoute><CodeArenaShell /></ProtectedRoute>} />
+        <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
         <Route path="/interview-room" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
       </Routes>
     </AnimatePresence>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SubComponentViewer from '../components/SubComponentViewer';
+import RoadmapChatbot from '../components/RoadmapChatbot';
 import api from '../api/axiosConfig';
 
 export default function RoadmapDetail() {
@@ -1212,6 +1213,7 @@ export default function RoadmapDetail() {
           )}
         </AnimatePresence>
       </div>
+      <RoadmapChatbot context={{ topic: roadmap?.primaryDomain || roadmap?.pathTitle || roadmap?.title }} />
     </motion.div>
   );
 }

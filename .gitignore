@@ -29,3 +29,7 @@ dist-ssr
 .kiro
 .vite
 Description.md
+venv/
+__pycache__/
+*.pyc
+.env
