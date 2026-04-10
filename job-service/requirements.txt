@@ -1,5 +1,5 @@
 fastapi==0.111.0
 uvicorn==0.30.1
-jobspy==0.31.0
+jobspy==0.30.1
 python-dotenv==1.0.1
 pandas>=2.0.0
