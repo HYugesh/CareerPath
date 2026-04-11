@@ -7,7 +7,6 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)](https://mongodb.com)
 [![Gemini AI](https://img.shields.io/badge/Google-Gemini%20AI-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
 [![Python](https://img.shields.io/badge/Python-3.12%20FastAPI-3776AB?logo=python&logoColor=white)](https://fastapi.tiangolo.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
@@ -309,12 +308,6 @@ git push origin feature/your-feature-name
 - Some job sites block scraping — use Indeed, LinkedIn, ZipRecruiter for best results
 - Gemini API has rate limits on the free tier — content generation may be slow under heavy use
 - Voice features require an OpenAI API key
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
